@@ -30,7 +30,7 @@ def save_images_from_data(
 
     Example:
     >>> import numpy as np
-    >>> from misc import save_images_from_data
+    >>> from unlikely.misc import save_images_from_data
     >>> series_1 = pd.DataFrame({'leg1': np.random.uniform(1000)})
     >>> series_2 = pd.DataFrame({'leg2': np.random.uniform(1000)})
     >>> series_3 = pd.DataFrame({'leg3': np.random.uniform(1000)})
