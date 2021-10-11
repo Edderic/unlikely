@@ -117,6 +117,15 @@ def save_images_from_data(
     )
 
 def distance(x,y):
+    """
+    Get absolute value between x and y.
+
+    Parameters:
+        x: numeric
+        y: numeric
+
+    Returns: numericc
+    """
     return abs(x-y)
 
 def find_index_of_closest(to_find, values):
