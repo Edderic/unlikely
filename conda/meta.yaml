@@ -1,0 +1,40 @@
+{% set name = "unlikely" %}
+{% set version = "0.0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  path: ../src
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+    - numpy
+    - pandas
+    - matplotlib
+    - KDEpy
+    - scipy
+
+about:
+  home: "https://github.com/edderic/unlikely"
+  license: MIT
+  license_family: MIT
+  summary: "Parallelized, Likelihood-free Bayesian Inference"
+  dev_url: "https://github.com/edderic/unlikely"
+
+extra:
+  recipe-maintainers:
+    - edderic
+test:
+  imports:
+    - unlikely
+    - unlikely.explorations
+    - unlikely.misc
+    - unlikely.models
+    - unlikely.priors
+
