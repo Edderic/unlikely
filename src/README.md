@@ -63,6 +63,13 @@ However, if it's set too large, then we might be putting too much weight to
 these low probability particles, making the variance of the posterior larger
 than what it should be.
 
+## Dependencies:
+- KDEpy
+- matplotlib
+- numpy
+- pandas
+- scipy
+
 ## Issues:
 
 Intermediate distribution sometimes assigns a lot of weight to highly
