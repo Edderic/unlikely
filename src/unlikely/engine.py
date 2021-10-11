@@ -6,8 +6,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-from priors import Beta, Normal, HalfCauchy
-from models import Models, Model
+from .priors import Beta, Normal, HalfCauchy
+from .models import Models, Model
 
 def simulate(priors, size):
     return np.random.normal(
