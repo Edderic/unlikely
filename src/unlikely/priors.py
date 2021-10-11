@@ -21,7 +21,7 @@ from KDEpy import FFTKDE
 import numpy as np
 from scipy.stats import beta as beta_dist, halfcauchy, norm
 
-from misc import find_index_of_closest
+from .misc import find_index_of_closest
 
 class DistributionFromSamples(ABC):
     """
