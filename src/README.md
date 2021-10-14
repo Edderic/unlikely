@@ -1,3 +1,34 @@
+# Unlikely
+
+_Likelihood-free, Parallelized, Bayesian computation_
+
+## Use-cases
+
+Are you interested in inferring the values of some parameters? Do you have
+data? Do you have a model that takes into account your idea of the data
+generating process? And do you have initial beliefs (priors) that go along with
+that? If so, then Unlikely might be for you!
+
+Unlikely works by letting the user specify a `Model`, which encodes:
+  1.  their knowledge of the data-generating process through the `simulate`
+      function.
+  2.  `Prior`s that encode our initial beliefs about the world, before seeing
+      the data. These are used to power the simulation.
+
+Through simulation, we sample "particles" from the prior to produce data. If
+the data is "close enough" to the data that you observed, then we keep the
+particles. We do several iterations of this. In each subsequent iteration, the
+notion of "close enough" becomes more stringent, so that the intermediate
+distributions get closer and closer to the true posterior distribution.
+
+## Example
+
+## Installation
+
+```
+conda install unlikely -c edderic
+```
+
 ## TODO
 - Make weighting scheme handle a mixture of variable types
    (ordinal vs. non-ordinal)
