@@ -8,16 +8,21 @@ package:
 source:
   path: ../src
 
+build:
+  script: "{{ PYTHON }} -m pip install . -vv"
+
 requirements:
+  build:
+    - python {{ python }}
   host:
     - pip
-    - python
+    - python {{ python }}
   run:
-    - python
+    - dask
+    - matplotlib
     - numpy
     - pandas
-    - matplotlib
-    - KDEpy
+    - python
     - scipy
 
 about:
