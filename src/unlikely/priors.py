@@ -16,10 +16,9 @@ DiscreteNonOrdinal
     TBD
 """
 from abc import ABC, abstractmethod
-from KDEpy import FFTKDE
 
 import numpy as np
-from scipy.stats import beta as beta_dist, halfcauchy, norm
+from scipy.stats import beta as beta_dist, halfcauchy, norm, gaussian_kde
 
 from .misc import find_index_of_closest
 
@@ -35,10 +34,7 @@ class DistributionFromSamples(ABC):
     """
     def __init__(self, samples):
         self.samples = samples
-        # x, y = FFTKDE(bw='silverman').fit(self.samples.values).evaluate()
-        x, y = FFTKDE(kernel="gaussian").fit(samples.values).evaluate()
-        self.x = x
-        self.y = y
+        self.kde = gaussian_kde(samples)
 
     def rvs(self, size=None):
         """
@@ -59,13 +55,7 @@ class DistributionFromSamples(ABC):
 
         Returns: float
         """
-        # Do binary search to find the value
-        closest_index = find_index_of_closest(
-            to_find=val,
-            values=self.x,
-        )
-
-        return self.y[closest_index]
+        return self.kde(val)
 
 class Prior(ABC):
     """
