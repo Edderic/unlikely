@@ -3,6 +3,7 @@ Contains the abc_smc engine.
 """
 import logging
 
+from dask.distributed import as_completed
 import numpy as np
 import pandas as pd
 
