@@ -6,7 +6,7 @@ package:
   version: "{{ version }}"
 
 source:
-  path: ../src
+  path: ../
 
 build:
   script: "{{ PYTHON }} -m pip install . -vv"
