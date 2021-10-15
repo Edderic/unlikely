@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -5,7 +6,7 @@ import matplotlib.pyplot as plt
 def save_images_from_data(
     data,
     xlim,
-    save_path = Path("/Users/eugaddan/Desktop/some_image.png"),
+    save_path,
     alpha=0.5,
     bins=None,
     figsize_mult=None
