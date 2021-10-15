@@ -83,7 +83,7 @@ def save_images_from_data(
     num_cols = len(data['data'])
 
     x, y = figsize_mult
-    fig, ax = plt.subplots(
+    fig, axs = plt.subplots(
         num_rows,
         num_cols,
         figsize=(num_rows * x, num_cols * y)
@@ -94,19 +94,26 @@ def save_images_from_data(
     for col_index, col in enumerate(data['data']):
         for row_index, row in enumerate(col):
 
-            ax[row_index, col_index].set_xlim(xlim)
-            ax[row_index, col_index].set_title(row['title'])
+            if num_cols == 1 and num_rows > 1:
+                ax = axs[row_index]
+            elif num_cols == 1 and num_rows == 1:
+                ax = axs
+            else:
+                ax = axs[row_index, col_index]
+
+            ax.set_xlim(xlim)
+            ax.set_title(row['title'])
 
             for df in row['data']:
                 if bins:
                     df.plot.hist(
-                        ax=ax[row_index, col_index],
+                        ax=ax,
                         alpha=alpha,
                         bins=bins
                     )
                 else:
                     df.plot.kde(
-                        ax=ax[row_index, col_index],
+                        ax=ax,
                         alpha=alpha
                     )
 
