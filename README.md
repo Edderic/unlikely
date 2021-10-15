@@ -75,23 +75,23 @@ num_particles = 2000
 epsilons = [3, 2, 1, 0]
 
 def distance(x,y):
-  """
-  For binomially distributed data, this essentially counts the number of
-  "successes". We do that for both the observed and the simulated data sets
-  and find the absolute distance between the two of them.
+    """
+    For binomially distributed data, this essentially counts the number of
+    "successes". We do that for both the observed and the simulated data sets
+    and find the absolute distance between the two of them.
 
-  This is for illustrative purposes only. You could write a more complex
-  one that suits your own problem.
+    This is for illustrative purposes only. You could write a more complex
+    one that suits your own problem.
 
-  Parameters:
-      x: np.array
-      y: np.array
+    Parameters:
+        x: np.array
+        y: np.array
 
-  Returns: numeric
-  """
-  return abs(x.sum() - y.sum())
+    Returns: numeric
+    """
+    return abs(x.sum() - y.sum())
 
-  def simulate(priors):
+def simulate(priors):
     """
     Used by a model to simulate data.
 
