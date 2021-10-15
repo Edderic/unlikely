@@ -446,10 +446,10 @@ class Models():
                 not to randomly choose a model to try sampling from.
         Returns: Model
         """
-        if epoch == None:
+        if epoch is None:
             epoch = self.num_epochs_processed
 
-        if p == None:
+        if p is None:
             p = self.perturbation_param
 
         if np.random.binomial(n=1, p=p):
