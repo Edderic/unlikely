@@ -35,7 +35,7 @@ posterior distribution that can act as the target (reference) distribution.
 
 ![Beta binomial model. ABC-SMC shows good performance](images/beta_binomial_example.png)
 
-Below is the code used to generate this image:
+Below is the code used to generate the data for the first row:
 
 ```python
 from pathlib import Path
@@ -49,21 +49,6 @@ from unlikely.engine import abc_smc
 from unlikely.models import Models, Model
 from unlikely.misc import save_images_from_data
 from unlikely.priors import Beta
-
-def assert_similar_enough_distribution(
-    accepted_proposals_description,
-    expected
-):
-    """
-    Test that the distributions are "close" enough.
-    """
-
-    absolute_diff = abs(
-        accepted_proposals_description - expected
-    )
-
-    assert (absolute_diff < 0.1)\
-        .sum().loc['beta'] == accepted_proposals_description.shape[0]
 
 # A 1 is a "success", and a 0 is a "failure"
 obs = np.array([1, 0, 1, 1, 1, 0, 1, 0, 1])
@@ -131,6 +116,14 @@ abc_smc(
     distance,
 )
 
+# The posterior distribution (i.e. accepted particles that are compatible
+# "enough" with the data and model) are stored in
+# models[0].prev_accepted_proposals
+```
+
+To create a posterior distribution for the 2nd row:
+
+```python
 # Create a model that uses the full data set
 models_more_data = Models(
     [
@@ -154,27 +147,11 @@ abc_smc(
     distance=distance,
 )
 
-# The posterior distribution (i.e. accepted particles that are compatible
-# "enough" with the data and model) are stored in
-# models[0].prev_accepted_proposals
+```
 
-assert_similar_enough_distribution(
-    models[0].prev_accepted_proposals.describe(),
-    pd.DataFrame({'beta': np.random.beta(2, 1, num_particles)}).describe()
-)
+_Optional_. The code used to generate the images above:
 
-assert_similar_enough_distribution(
-    models_more_data[0].prev_accepted_proposals.describe(),
-    pd.DataFrame(
-        {
-            'beta': np.random.beta(
-                obs.sum() + 1, len(obs) - obs.sum() + 1,
-                num_particles
-            )
-        }
-    ).describe()
-)
-
+```python
 # Assuming you have an "images" folder in your current working directory:
 save_images_from_data(
     save_path=Path(os.getenv("PWD")) / "images" / "beta_binomial_example.png",
