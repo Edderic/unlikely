@@ -372,10 +372,19 @@ class Models():
     A collection of models.
     """
     def __init__(self, models, perturbation_param):
+        """
+        Parameters:
+            models: unlikely.Models-like object
+            perturbation_param: float. Defaults to 0.9
+        """
         self.models = models
 
         # TODO: check for uniqueness
         self.mapping = {m.get_name(): m for m in models}
+
+        if perturbation_param is None:
+            perturbation_param = 0.9
+
         self.perturbation_param = perturbation_param
         self.num_epochs_processed = 0
 
@@ -423,7 +432,7 @@ class Models():
         probas = weights / weights.sum()
 
         return {
-            m.get_name(): p for m,p in zip(self.models, probas)
+            m.get_name(): p for m, p in zip(self.models, probas)
         }
 
     def get_perturbed_proposal(self, epoch=None, p=None):
@@ -432,6 +441,9 @@ class Models():
             epoch: integer
                 The integer that represents the population of interest.
 
+            p: float
+                A perturbation probability. This will let us decide whether or
+                not to randomly choose a model to try sampling from.
         Returns: Model
         """
         if epoch == None:
