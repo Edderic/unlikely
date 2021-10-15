@@ -3,10 +3,10 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-def save_images_from_data(
+def create_images_from_data(
     data,
     xlim,
-    save_path,
+    save_path=None,
     alpha=0.5,
     bins=None,
     figsize_mult=None
@@ -18,7 +18,8 @@ def save_images_from_data(
         xlim: tuple
             X limits
 
-        save_path: Path-like object
+        save_path: Path-like object.
+            If None, this function will return a matplotlib figure and axes.
 
         alpha: float
             Transparency of items.
@@ -29,9 +30,13 @@ def save_images_from_data(
             2-item tuple, where each one is an integer. We use
             these as part of figsize.
 
+    Returns: None or tuple
+        If tuple, this will contain a figure and axes object of
+        matplotlib.pyplot.
+
     Example:
     >>> import numpy as np
-    >>> from unlikely.misc import save_images_from_data
+    >>> from unlikely.misc import create_images_from_data
     >>> series_1 = pd.DataFrame({'leg1': np.random.uniform(1000)})
     >>> series_2 = pd.DataFrame({'leg2': np.random.uniform(1000)})
     >>> series_3 = pd.DataFrame({'leg3': np.random.uniform(1000)})
@@ -40,7 +45,7 @@ def save_images_from_data(
     >>> series_6 = pd.DataFrame({'leg6': np.random.uniform(1000)})
     >>> series_7 = pd.DataFrame({'leg7': np.random.uniform(1000)})
     >>> series_8 = pd.DataFrame({'leg8': np.random.uniform(1000)})
-    >>> save_images_from_data(
+    >>> create_images_from_data(
     >>>     data={
     >>>         'title': "Figure super title",
     >>>         'data': [
@@ -118,11 +123,14 @@ def save_images_from_data(
                     )
 
     fig.set_tight_layout(True)
-    fig.savefig(
-        save_path,
-        format='png',
-        bbox_inches='tight'
-    )
+    if save_path:
+        fig.savefig(
+            save_path,
+            format='png',
+            bbox_inches='tight'
+        )
+    else:
+        return fig, axs
 
 def distance(x,y):
     """

@@ -47,7 +47,7 @@ import pytest
 
 from unlikely.engine import abc_smc
 from unlikely.models import Models, Model
-from unlikely.misc import save_images_from_data
+from unlikely.misc import create_images_from_data
 from unlikely.priors import Beta
 
 # A 1 is a "success", and a 0 is a "failure"
@@ -153,7 +153,7 @@ _Optional_. The code used to generate the images above:
 
 ```python
 # Assuming you have an "images" folder in your current working directory:
-save_images_from_data(
+create_images_from_data(
     save_path=Path(os.getenv("PWD")) / "images" / "beta_binomial_example.png",
     data={
         'title': "Comparison of Prior & Posterior of a"\

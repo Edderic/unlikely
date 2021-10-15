@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from .engine import abc_smc
-from .misc import save_images_from_data
+from .misc import create_images_from_data
 from .models import Models, Model
 from .priors import Beta
 
@@ -305,7 +305,7 @@ def plot_bayesian_updating_beta_example(save_path, client=None):
         ]
     }
 
-    save_images_from_data(
+    create_images_from_data(
         save_path=save_path,
         data=graph_data,
         xlim=(0,1),
