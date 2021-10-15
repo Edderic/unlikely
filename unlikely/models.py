@@ -371,7 +371,7 @@ class Models():
     """
     A collection of models.
     """
-    def __init__(self, models, perturbation_param):
+    def __init__(self, models, perturbation_param=None):
         """
         Parameters:
             models: unlikely.Models-like object
