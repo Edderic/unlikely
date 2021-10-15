@@ -155,7 +155,8 @@ abc_smc(
 )
 
 # The posterior distribution (i.e. accepted particles that are compatible
-# "enough" with the data and model) are stored here
+# "enough" with the data and model) are stored in
+# models[0].prev_accepted_proposals
 
 assert_similar_enough_distribution(
     models[0].prev_accepted_proposals.describe(),
@@ -186,11 +187,11 @@ save_images_from_data(
                     'title': 'Posterior after 1 success out of 1',
                     'data': [
                         models[0].prev_accepted_proposals.rename(
-                            columns={'beta': 'posterior'}
+                            columns={'beta': 'posterior (eps: [3,2,1,0])'}
                         ),
                         pd.DataFrame(
                             {
-                                'expected_posterior': np.random.beta(
+                                'reference_posterior': np.random.beta(
                                     2, 1, num_particles)
                             }
                         ),
@@ -210,7 +211,7 @@ save_images_from_data(
                         ),
                         pd.DataFrame(
                             {
-                                'expected_posterior': np.random.beta(
+                                'reference_posterior': np.random.beta(
                                     obs.sum() + 1,
                                     len(obs) - obs.sum() + 1,
                                     num_particles
