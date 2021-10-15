@@ -67,7 +67,7 @@ def try_accepting_proposals(
 
         simulated_data = model.simulate(
             perturbed_particle,
-            len(obs)
+            obs
         )
 
         dist = distance(
