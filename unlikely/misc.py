@@ -30,9 +30,8 @@ def create_images_from_data(
             2-item tuple, where each one is an integer. We use
             these as part of figsize.
 
-    Returns: None or tuple
-        If tuple, this will contain a figure and axes object of
-        matplotlib.pyplot.
+    Returns: tuple
+        fig, ax: matplotlib objects
 
     Example:
     >>> import numpy as np
@@ -123,14 +122,15 @@ def create_images_from_data(
                     )
 
     fig.set_tight_layout(True)
+
     if save_path:
         fig.savefig(
             save_path,
             format='png',
             bbox_inches='tight'
         )
-    else:
-        return fig, axs
+
+    return fig, axs
 
 def distance(x,y):
     """
