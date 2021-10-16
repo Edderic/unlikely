@@ -7,8 +7,8 @@ from dask.distributed import as_completed
 import numpy as np
 from tqdm import tqdm
 
-from priors import Beta, Normal, HalfCauchy
-from models import Models, Model
+from .priors import Beta, Normal, HalfCauchy
+from .models import Models, Model
 
 def simulate(priors, size):
     return np.random.normal(
