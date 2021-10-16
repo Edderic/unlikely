@@ -8,6 +8,8 @@ Classes
     Model
     Models
 """
+
+
 class Model():
     """
     Model object has a bunch of "get_" methods to emphasize that these methods
@@ -30,30 +32,83 @@ class Model():
         priors,
         prior_model_proba,
         perturb=None,
+        use_weighting_scheme=None,
         simulate=None
     ):
         """
         Parameters:
             name: string
             priors: list[Prior]
-                The priors that we'll be sampling from, which the simulator uses.
+                The priors that we'll be sampling from, which the simulator
+                uses.
             prior_model_proba: float
                 Prior probability of this model being true.
-            perturb: boolean. Defaults to True
+            perturb: boolean. Defaults to True.
                 If True, then model perturbs proposals. This is useful when you
                 have a bunch of epsilons to go through, to prevent the
-                posterior from getting too thin.
+                posterior from getting too thin. The final posterior
+                distribution can get too thin because the intermediary
+                distributions can get too thin. They can get too thin because
+                it's possible that we might not get enough samples from a
+                distribution if our number of particles to collect is too
+                small.
 
-                If False, then model does not perturb proposals. This is
-                helpful in cases of iterative Bayesian updating. In those
-                cases, perturbation, could inflate the variance, especially
-                when the perturbation kernel gives proposals that are far from
-                the original proposal, and there is not a lot of data within
-                the batch. If this setting is set to False, it might be helpful
-                to increase the number of particles to be collected, so that
-                the posterior distribution doesn't get too thin (i.e. the
-                posterior distribution coming out of this model doesn't have
-                way smaller variance than the "true" posterior distribution.).
+                However, there's a risk of overinflation, especially in the
+                case of Bayesian updating with mini batches (i.e. updating
+                iteratively with small batches of data).
+
+                In those cases, perturbation, could inflate the variance,
+                especially when the perturbation kernel gives proposals that
+                are far from the original proposal, and there is not a lot of
+                data within the batch. If this setting is set to False, it
+                might be helpful to increase the number of particles to be
+                collected, so that the posterior distribution doesn't get too
+                thin (i.e. the posterior distribution coming out of this model
+                doesn't have way smaller variance than the "true" posterior
+                distribution.).
+
+            use_weighting_scheme: boolean. Defaults to True. Experimental.
+                If True, then each proposal essentially gets weighted by how
+                far it is from the samples of the previous epoch, along with
+                the weights of the previous epoch.
+
+                The weighting scheme for a proposal is as follows:
+
+                numerator = prior.pdf(proposal)
+                denominator = sum_i prev_weight(prev_sample(i)) *
+                    closeness_kernel.pdf(proposal, prev_sample(i))
+
+                numerator / denominator gives us the weight.
+
+                Intuitions:
+
+                Decreasing the numerator leads to lower weight:
+
+                Since the prior probability of a proposal is in the numerator,
+                a low prior probability of a proposal will decrease the weight
+                of the numerator.
+
+
+                Decreasing the denominator leads to higher weight:
+
+                If proposal is close to mostly low-weighted-samples, then the
+                perturbation kernel pdf would give high values (since they are
+                close to the proposal), but these will be dampened out by the
+                low (normalized) weighting of said samples.
+
+
+                Increasing the denominator leads to lower weight:
+
+                If proposal is close to mostly highly-weighted samples, then
+                the denominator will be large. High (normalized) weighting of
+                the previous (accepted) proposals times their closeness to the
+                sample leads to high values of the denominator. Big
+                denominators shrink the assigned weight for the proposal.
+
+                The weighting scheme, along with the perturbation parameter,
+                prevents over-deflation of the posterior distribution. This is
+                useful in the setting of having multiple epochs, where in each
+                epoch, we are sampling from a finite sample.
 
             simulate: callable
                 A callable that takes in the priors and produces data with it.
@@ -62,6 +117,11 @@ class Model():
             self.perturb = True
         else:
             self.perturb = False
+
+        if use_weighting_scheme is None:
+            self.use_weighting_scheme = True
+        else:
+            self.use_weighting_scheme = False
 
         self.name = name
         self.num_epochs_processed = 0
@@ -106,7 +166,7 @@ class Model():
             epoch: integer or None.
                 If None, gets set to self.num_epochs_processed
         """
-        if epoch == None:
+        if epoch is None:
             epoch = self.num_epochs_processed
 
         # prevent IndexError
@@ -254,19 +314,21 @@ class Model():
             values: float
                 Weight corresponding to the prior name and epoch.
         """
-        if epoch == None:
+        if epoch is None:
             epoch = self.num_epochs_processed
 
         prior_len = len(self.priors)
 
-        if epoch == 0 or not self.perturb:
+        if epoch == 0 or not self.use_weighting_scheme:
             return np.ones(prior_len)
         else:
             return {
                 prior_name: prior.compute_weight(
                     particle=perturbed[prior_name],
                     prev_weights=self.prev_weights,
-                    prev_values=self.prev_accepted_proposals.loc[:,prior_name],
+                    prev_values=self.prev_accepted_proposals.loc[
+                        :, prior_name
+                    ],
                     prev_std=self.prev_stds[prior_name],
                 )
 
