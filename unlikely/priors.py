@@ -169,6 +169,7 @@ class BetaFromSamples(DistributionFromSamples):
 
         return super().pdf(val)
 
+
 class Beta(Prior):
     """
     Beta distribution.
