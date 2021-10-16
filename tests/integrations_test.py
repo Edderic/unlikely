@@ -12,21 +12,7 @@ from ..unlikely.models import Models, Model
 from ..unlikely.misc import create_images_from_data
 from ..unlikely.priors import Beta
 
-
-def assert_similar_enough_distribution(
-    accepted_proposals_description,
-    expected
-):
-    """
-    Test that the distributions are "close" enough.
-    """
-
-    absolute_diff = abs(
-        accepted_proposals_description - expected
-    )
-
-    assert (absolute_diff < 0.1)\
-        .sum().loc['beta'] == accepted_proposals_description.shape[0]
+from ..conftest import assert_similar_enough_distribution
 
 
 def test_beta_binomial_1():
@@ -131,12 +117,12 @@ def test_beta_binomial_1():
     # models[0].prev_accepted_proposals
 
     assert_similar_enough_distribution(
-        models[0].prev_accepted_proposals.describe(),
-        pd.DataFrame({'beta': np.random.beta(2, 1, num_particles)}).describe()
+        models[0].prev_accepted_proposals,
+        pd.DataFrame({'beta': np.random.beta(2, 1, num_particles)})
     )
 
     assert_similar_enough_distribution(
-        models_more_data[0].prev_accepted_proposals.describe(),
+        models_more_data[0].prev_accepted_proposals,
         pd.DataFrame(
             {
                 'beta': np.random.beta(
@@ -144,7 +130,7 @@ def test_beta_binomial_1():
                     num_particles
                 )
             }
-        ).describe()
+        )
     )
 
     # Assuming you have an "images" folder in your current working directory:
