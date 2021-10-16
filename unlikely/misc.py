@@ -1,4 +1,4 @@
-import os
+import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -184,3 +184,24 @@ def find_closest(to_find, values, left_index, right_index):
             left_index=left_index,
             right_index=(right_index - left_index) // 2 + left_index
         )
+
+
+def setup_logging(filename=None, filemode='a', level=logging.INFO):
+    """
+    Sets up logging with time, levelname, and message.
+
+    Returns: logging
+    """
+    args = {
+        'format': '%(asctime)s %(levelname)-8s %(message)s',
+        'level': level,
+        'datefmt': '%Y-%m-%d %H:%M:%S'
+    }
+
+    if filename:
+        args['filename'] = filename
+        args['filemode'] = filemode
+
+    logging.basicConfig(**args)
+
+    return logging
