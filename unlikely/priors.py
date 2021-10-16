@@ -195,10 +195,10 @@ class Beta(Prior):
         while self.pdf(perturbation) == 0:
             if counter > 100:
                 raise ValueError(
-                    f"Did not succeed producing viable perturbation."
+                    "Did not succeed producing viable perturbation."
                 )
 
-            perturbation = np.random.normal(value, std)
+            perturbation = np.random.normal(value, std / 10.0)
             counter += 1
 
         return perturbation
