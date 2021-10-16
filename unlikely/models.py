@@ -351,8 +351,8 @@ class Model():
         if self.num_epochs_processed > 0:
             self.prev_weights = np.ones(len(self.weights[self.num_epochs_processed - 1]))
 
-    def simulate(self):
-        return self.simulator(self.priors)
+    def simulate(self, args):
+        return self.simulate(self.priors, args)
 
     def increment_num_epochs_processed(self):
         self.num_epochs_processed += 1

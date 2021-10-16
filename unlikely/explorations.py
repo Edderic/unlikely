@@ -11,8 +11,8 @@ from .priors import Beta
 def distance(x,y):
     return abs(x.sum() - y.sum())
 
-def simulate(priors, size=1):
-    return np.random.binomial(n=1, p=priors['beta'], size=size)
+def simulate(priors, observation):
+    return np.random.binomial(n=1, p=priors['beta'], size=len(observation))
 
 def plot_bayesian_updating_beta_example(save_path, client=None):
     """

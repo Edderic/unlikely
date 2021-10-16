@@ -5,10 +5,10 @@ import logging
 
 from dask.distributed import as_completed
 import numpy as np
-import pandas as pd
+from tqdm import tqdm
 
-from .priors import Beta, Normal, HalfCauchy
-from .models import Models, Model
+from priors import Beta, Normal, HalfCauchy
+from models import Models, Model
 
 def simulate(priors, size):
     return np.random.normal(
@@ -136,7 +136,7 @@ def abc_smc(
         num_particles_accepted = 0
 
         if client == None:
-            for _ in range(num_particles):
+            for _ in tqdm(range(num_particles)):
                 model_name, proposal, sub_wt_particle = try_accepting_proposals(
                     obs,
                     epoch,
