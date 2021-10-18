@@ -196,7 +196,11 @@ def test_beta_binomial_1():
 @pytest.mark.f
 def test_beta_binomial_non_abc_rejection_sampling():
     """
-    Epsilon set to [0]. This is equivalent to "exact" rejection sampling.
+    To see how settings affect the dispersion of the posterior distribution,
+    here we vary a bunch of settings. We vary the number of epsilons, whether
+    or not to use a constant standard deviation for the perturbation process
+    within one abc_smc run, and if not using a constant standard deviation,
+    varying how thin the adaptive standard deviation.
     """
     num_particles = 2000
     obs = np.array([
@@ -232,19 +236,27 @@ def test_beta_binomial_non_abc_rejection_sampling():
 
         data_to_display.append([
             {
-                'title': f"batch 1: {obs[:3]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'title': f"batch 1: {obs[:3]}"
+                + f", std_div: {beta_std_div},"
+                + f" constant_dev: {use_constant_dev}",
                 'data': []
             },
             {
-                'title': f"batch 2: {obs[3:7]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'title': f"batch 2: {obs[3:7]},"
+                + f" std_div: {beta_std_div},"
+                + f" constant_dev: {use_constant_dev}",
                 'data': []
             },
             {
-                'title': f"batch 3: {obs[7:]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'title': f"batch 3: {obs[7:]},"
+                + f" std_div: {beta_std_div},"
+                + f" constant_dev: {use_constant_dev}",
                 'data': []
             },
             {
-                'title': f"full batch, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'title': "full batch,"
+                + f" std_div: {beta_std_div},"
+                + f" constant_dev: {use_constant_dev}",
                 'data': []
             }
         ])
@@ -272,6 +284,7 @@ def test_beta_binomial_non_abc_rejection_sampling():
                 use_constant_dev=use_constant_dev
             )
 
+            # Loop through the rows
             for j, (start_index, end_index) in enumerate(obs_indices):
                 obs_batch = obs[start_index:end_index]
 
@@ -355,12 +368,25 @@ def test_beta_binomial_non_abc_rejection_sampling():
 
     create_images_from_data(
         data={
-            'title': 'Batch updating vs. Full batch',
+            'title': '',
             'data': data_to_display
         },
         xlim=(0, 1),
+        ylim=(0, 5),
         figsize_mult=(4, 8),
         save_path=Path(
             os.getenv("PWD")
         ) / "images" / "beta_binomial_mini_batch.png",
+    )
+
+    assert_similar_enough_distribution(
+        models[0].prev_accepted_proposals,
+        pd.DataFrame(
+            {
+                'beta': np.random.beta(
+                    obs.sum() + 1, len(obs) - obs.sum() + 1,
+                    num_particles
+                )
+            }
+        )
     )
