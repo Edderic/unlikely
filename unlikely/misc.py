@@ -77,7 +77,7 @@ def create_images_from_data(
         bins = False
 
     if figsize_mult is None:
-        figsize_mult = (2,5)
+        figsize_mult = (2, 5)
 
     num_rows = 0
     for col in data['data']:

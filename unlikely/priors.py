@@ -20,7 +20,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.stats import beta as beta_dist, halfcauchy, norm, gaussian_kde
 
-from .misc import find_index_of_closest
 
 class DistributionFromSamples(ABC):
     """
@@ -57,6 +56,7 @@ class DistributionFromSamples(ABC):
         """
         return self.kde(val)
 
+
 class Prior(ABC):
     """
     Abstract Base Class for priors.
@@ -72,8 +72,9 @@ class Prior(ABC):
         sample
         __repr__
     """
-    def __init__(self, distribution):
+    def __init__(self, distribution, name):
         self.distribution = distribution
+        self.name = name
 
     def compute_weight(
         self,
@@ -110,7 +111,21 @@ class Prior(ABC):
         return numerator / denominator
 
     def get_name(self):
+        """
+        Get the name of the prior.
+
+        Returns: str
+        """
         return self.name
+
+    def use_constant_dev(self):
+        """
+        Set a constant deviation for all the perturbations throughout all
+        epochs.
+
+        For perturbation, use a constant standard deviation.
+        """
+        self.constant_dev = self.sample(10000).std()
 
     def use_distribution_from_samples(self, samples):
         """
@@ -120,6 +135,8 @@ class Prior(ABC):
             samples: np.array
         """
         self.distribution = self.distribution_from_samples_class(samples)
+        if self.constant_dev is not None:
+            self.constant_dev = samples.std()
 
     @abstractmethod
     def perturb(self, value, std):
@@ -150,9 +167,10 @@ class Prior(ABC):
     def __repr__(self):
         pass
 
+
 class BetaFromSamples(DistributionFromSamples):
     def __repr__(self):
-        return f"BetaFromSamples()"
+        return "BetaFromSamples()"
 
     def pdf(self, val):
         """
@@ -177,12 +195,24 @@ class Beta(Prior):
     Good for modeling probabilities, since the range is constrained between 0
     and 1.
     """
-    def __init__(self, alpha, beta, name=None):
+    def __init__(
+        self,
+        alpha,
+        beta,
+        name=None,
+        std_div=None,
+    ):
         self.alpha = alpha
         self.beta = beta
         self.name = name
         self.distribution = beta_dist(alpha, beta)
         self.distribution_from_samples_class = BetaFromSamples
+        if std_div is None:
+            self.std_div = 10.0
+        else:
+            self.std_div = std_div
+
+        self.constant_dev = None
 
     def perturb(self, value, std):
         """
@@ -192,13 +222,18 @@ class Beta(Prior):
         counter = 0
         perturbation = -1
 
+        if self.constant_dev is not None:
+            standard_dev = self.constant_dev
+        else:
+            standard_dev = std
+
         while self.pdf(perturbation) == 0:
             if counter > 100:
                 raise ValueError(
                     "Did not succeed producing viable perturbation."
                 )
 
-            perturbation = np.random.normal(value, std / 10.0)
+            perturbation = np.random.normal(value, standard_dev / self.std_div)
             counter += 1
 
         return perturbation
@@ -206,8 +241,10 @@ class Beta(Prior):
     def __repr__(self):
         return f"Beta(alpha: {self.alpha}, beta: {self.beta})"
 
+
 class NormalFromSamples(DistributionFromSamples):
     pass
+
 
 class Normal(Prior):
     """
@@ -219,12 +256,19 @@ class Normal(Prior):
         self.name = name
         self.distribution = norm(mean, std)
         self.distribution_from_samples_class = NormalFromSamples
+        self.constant_dev = None
 
     def perturb(self, value, std):
-        return np.random.normal(value, std)
+        if self.constant_dev is not None:
+            standard_dev = self.constant_dev
+        else:
+            standard_dev = std
+
+        return np.random.normal(value, standard_dev)
 
     def __repr__(self):
         return f"Normal(mean: {self.loc}, std: {self.scale})"
+
 
 class HalfCauchyFromSamples(DistributionFromSamples):
     """
@@ -240,6 +284,7 @@ class HalfCauchyFromSamples(DistributionFromSamples):
 
         return super().pdf(val)
 
+
 class HalfCauchy(Prior):
     """
     Half Cauchy Distribution
@@ -250,6 +295,7 @@ class HalfCauchy(Prior):
         self.distribution = halfcauchy(loc, scale)
         self.name = name
         self.distribution_from_samples_class = HalfCauchyFromSamples
+        self.constant_dev = None
 
     def perturb(self, value, std):
         """
@@ -259,11 +305,18 @@ class HalfCauchy(Prior):
         counter = 0
         perturbation = -1
 
+        if self.constant_dev is not None:
+            standard_dev = self.constant_dev
+        else:
+            standard_dev = std
+
         while self.pdf(perturbation) == 0:
             if counter > 100:
-                raise ValueError(f"Did not succeed producing viable perturbation.")
+                raise ValueError(
+                    "Did not succeed producing viable perturbation."
+                )
 
-            perturbation = np.random.normal(value, std)
+            perturbation = np.random.normal(value, standard_dev)
             counter += 1
 
         return perturbation

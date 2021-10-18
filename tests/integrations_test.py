@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from ..unlikely.engine import abc_smc
 from ..unlikely.models import Models, Model
@@ -189,4 +190,177 @@ def test_beta_binomial_1():
         },
         xlim=(0, 1),
         figsize_mult=(5, 5)
+    )
+
+
+@pytest.mark.f
+def test_beta_binomial_non_abc_rejection_sampling():
+    """
+    Epsilon set to [0]. This is equivalent to "exact" rejection sampling.
+    """
+    num_particles = 2000
+    obs = np.array([
+        1, 1, 1,
+        1, 1, 1, 0,
+        0, 1, 1, 0, 1, 1, 1
+    ])
+    epsilons = [0]
+
+    def distance(x, y):
+        """
+        Compare the number of ones in one vs. the other.
+        """
+        return abs(x.sum() - y.sum())
+
+    def simulate(priors, obs):
+        """
+        Data is binomially distributed.
+        """
+        return np.random.binomial(n=1, p=priors['beta'], size=len(obs))
+
+    data_to_display = []
+
+    constant_devs = [False, False, True]
+    beta_std_divs = [1.0, 10.0, 1.0]
+    cols = list(range(len(beta_std_divs)))
+
+    for col, beta_std_div, use_constant_dev in zip(
+        cols,
+        beta_std_divs,
+        constant_devs
+    ):
+
+        data_to_display.append([
+            {
+                'title': f"batch 1: {obs[:3]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'data': []
+            },
+            {
+                'title': f"batch 2: {obs[3:7]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'data': []
+            },
+            {
+                'title': f"batch 3: {obs[7:]}, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'data': []
+            },
+            {
+                'title': f"full batch, std_div: {beta_std_div}, constant_dev: {use_constant_dev}",
+                'data': []
+            }
+        ])
+
+        obs_indices = [(0, 3), (3, 7), (7, len(obs))]
+        epsilon_sets = [[0], [1, 0], [3, 2, 1, 0]]
+
+        for i, epsilons in enumerate(epsilon_sets):
+            models = Models(
+                [
+                    Model(
+                        name='flat prior',
+                        priors=[
+                            Beta(
+                                alpha=1,
+                                beta=1,
+                                name="beta",
+                                std_div=beta_std_div,
+                            )
+                        ],
+                        simulate=simulate,
+                        prior_model_proba=1,
+                    ),
+                ],
+                use_constant_dev=use_constant_dev
+            )
+
+            for j, (start_index, end_index) in enumerate(obs_indices):
+                obs_batch = obs[start_index:end_index]
+
+                if i == 0:
+                    data_to_display[col][j]['data'].append(
+                        pd.DataFrame(
+                            {
+                                'target': np.random.beta(
+                                    obs[:end_index].sum() + 1,
+                                    len(obs[:end_index])
+                                    - obs[:end_index].sum() + 1,
+                                    num_particles
+                                )
+                            }
+                        )
+                    )
+                # Update with 1st batch
+                abc_smc(
+                    num_particles=num_particles,
+                    epsilons=epsilons,
+                    models=models,
+                    obs=obs_batch,
+                    distance=distance,
+                )
+
+                data_to_display[col][j]['data'].append(
+                    pd.DataFrame(models[0].prev_accepted_proposals)
+                    .rename(
+                        columns={
+                            'beta': f'after batch {j + 1}, eps: {epsilons}'
+                        }
+                    )
+                )
+
+                # The posterior distribution becomes the prior
+                models.use_distribution_from_samples()
+
+        data_to_display[col][-1]['data'].append(
+            pd.DataFrame({
+                'reference_posterior': np.random.beta(
+                    obs.sum() + 1,
+                    len(obs) - obs.sum() + 1,
+                    num_particles
+                )
+            })
+        )
+
+        for epsilons in epsilon_sets:
+            models = Models(
+                [
+                    Model(
+                        name='flat prior',
+                        priors=[
+                            Beta(
+                                alpha=1,
+                                beta=1,
+                                name="beta",
+                                std_div=beta_std_div,
+                            )
+                        ],
+                        simulate=simulate,
+                        prior_model_proba=1,
+                    ),
+                ],
+                use_constant_dev=use_constant_dev
+            )
+
+            # Update full batch
+            abc_smc(
+                num_particles=num_particles,
+                epsilons=epsilons,
+                models=models,
+                obs=obs,
+                distance=distance,
+            )
+
+            data_to_display[col][-1]['data'].append(
+                pd.DataFrame(models[0].prev_accepted_proposals)
+                .rename(columns={'beta': f'full batch, eps: {epsilons}'})
+            )
+
+    create_images_from_data(
+        data={
+            'title': 'Batch updating vs. Full batch',
+            'data': data_to_display
+        },
+        xlim=(0, 1),
+        figsize_mult=(4, 8),
+        save_path=Path(
+            os.getenv("PWD")
+        ) / "images" / "beta_binomial_mini_batch.png",
     )

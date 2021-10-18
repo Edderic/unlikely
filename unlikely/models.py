@@ -428,16 +428,26 @@ class Model():
                 self.prev_accepted_proposals[prior_name]
             )
 
+    def use_constant_dev(self):
+        """
+        For each prior, compute the standard deviation and then set it.
+        """
+        for _, prior in self.priors.items():
+            prior.use_constant_dev()
+
 
 class Models():
     """
     A collection of models.
     """
-    def __init__(self, models, perturbation_param=None):
+    def __init__(self, models, perturbation_param=None, use_constant_dev=None):
         """
         Parameters:
             models: unlikely.Models-like object
             perturbation_param: float. Defaults to 0.9
+            use_constant_dev: boolean. Defaults to None
+                If None or True, will delegate use_constant_dev method to the
+                model.
         """
         self.models = models
 
@@ -449,6 +459,9 @@ class Models():
 
         self.perturbation_param = perturbation_param
         self.num_epochs_processed = 0
+
+        if use_constant_dev is None or use_constant_dev:
+            self.use_constant_dev()
 
     def __iter__(self):
         """
@@ -559,4 +572,9 @@ class Models():
         for model in self.models:
             model.use_distribution_from_samples()
 
-
+    def use_constant_dev(self):
+        """
+        Tells each model to use constant standard deviation.
+        """
+        for model in self.models:
+            model.use_constant_dev()

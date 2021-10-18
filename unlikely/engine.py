@@ -128,8 +128,6 @@ def abc_smc(
     logging.debug("epsilons: %s", epsilons)
     logging.debug("obs: %s", obs)
 
-    # models.reset_prev_weights()
-
     # epoch represents a population over time
     for epoch, epsilon in enumerate(epsilons):
         logging.debug("Current epoch and epsilon: %s, %s", epoch, epsilon)
