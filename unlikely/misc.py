@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 def create_images_from_data(
     data,
     xlim,
+    ylim=None,
     save_path=None,
     alpha=0.5,
     bins=None,
@@ -17,6 +18,9 @@ def create_images_from_data(
 
         xlim: tuple
             X limits
+
+        ylim: tuple
+            Y limits
 
         save_path: Path-like object.
             If None, this function will return a matplotlib figure and axes.
@@ -107,6 +111,9 @@ def create_images_from_data(
 
             ax.set_xlim(xlim)
             ax.set_title(row['title'])
+
+            if ylim is not None:
+                ax.set_ylim(ylim)
 
             for df in row['data']:
                 if bins:
