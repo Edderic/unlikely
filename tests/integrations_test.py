@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from ..unlikely.engine import abc_smc
 from ..unlikely.models import Models, Model
@@ -24,7 +23,7 @@ def test_beta_binomial_1():
     num_particles = 2000
 
     # The cutoff(s) that decide whether or not to accept a particle.
-    epsilons = [3, 2, 1, 0]
+    epsilons = [0]
 
     def distance(x, y):
         """
@@ -146,7 +145,7 @@ def test_beta_binomial_1():
                         'title': 'Posterior after 1 success out of 1',
                         'data': [
                             models[0].prev_accepted_proposals.rename(
-                                columns={'beta': 'posterior (eps: [3,2,1,0])'}
+                                columns={'beta': f'eps: {epsilons}'}
                             ),
                             pd.DataFrame(
                                 {
@@ -166,7 +165,7 @@ def test_beta_binomial_1():
                         'title': 'Full update with 6 successes out of 9',
                         'data': [
                             models_more_data[0].prev_accepted_proposals.rename(
-                                columns={'beta': 'posterior (eps: [3,2,1,0])'}
+                                columns={'beta': f'eps: {epsilons}'}
                             ),
                             pd.DataFrame(
                                 {
@@ -193,7 +192,6 @@ def test_beta_binomial_1():
     )
 
 
-@pytest.mark.f
 def test_beta_binomial_non_abc_rejection_sampling():
     """
     To see how settings affect the dispersion of the posterior distribution,
