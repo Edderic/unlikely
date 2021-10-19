@@ -278,12 +278,17 @@ class Uniform(Prior):
         name=None,
     ):
         """
-
+        Parameters:
+            alpha: float
+                Lower-bound
+            beta: float
+                Upper-bound
+            name: string
         """
         self.alpha = alpha
         self.beta = beta
         self.name = name
-        self.distribution = uniform(alpha, beta)
+        self.distribution = uniform(alpha, beta - alpha)
         self.distribution_from_samples_class = BetaFromSamples
         self.constant_dev = None
         Prior.__init__(self, self.distribution, name)
