@@ -35,7 +35,7 @@ class DistributionFromSamples(ABC):
     def __init__(self, samples, args=None):
         self.samples = samples
         self.kde = gaussian_kde(samples)
-        if args is None:
+        if args is not None:
             self.args = args
         else:
             self.args = {}
@@ -289,7 +289,7 @@ class Uniform(Prior):
         self.beta = beta
         self.name = name
         self.distribution = uniform(alpha, beta - alpha)
-        self.distribution_from_samples_class = BetaFromSamples
+        self.distribution_from_samples_class = UniformFromSamples
         self.constant_dev = None
         Prior.__init__(self, self.distribution, name)
 
@@ -342,6 +342,9 @@ class UniformFromSamples(DistributionFromSamples):
     """
     Uniform Distribution from Samples
     """
+    def __init__(self, samples, args):
+        super(UniformFromSamples, self).__init__(samples, args)
+
     def __repr__(self):
         return "UniformFromSamples()"
 
