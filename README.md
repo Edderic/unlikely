@@ -33,9 +33,13 @@ posterior distribution. Because there is a closed-form solution specifically
 for the Beta-Binomial distribution, we can use that knowledge to construct a
 posterior distribution that can act as the target (reference) distribution.
 
+Below, we compare said reference distributions with posterior distributions
+using rejection sampling:
+
 ![Beta binomial model. ABC-SMC shows good performance](images/beta_binomial_example.png)
 
-Below is the code used to generate the data for the first row:
+See [test_beta_binomial_1 of the integration tests](tests/integration_tests.py)
+to see how the above can be produced.
 
 ```python
 from pathlib import Path
@@ -43,7 +47,6 @@ from pathlib import Path
 from dask.distributed import Client, LocalCluster
 import numpy as np
 import pandas as pd
-import pytest
 
 from unlikely.engine import abc_smc
 from unlikely.models import Models, Model
@@ -112,103 +115,15 @@ abc_smc(
     num_particles,
     epsilons,
     models,
-    np.array([obs[0]]),
+    obs,
     distance,
 )
-
-# The posterior distribution (i.e. accepted particles that are compatible
-# "enough" with the data and model) are stored in
-# models[0].prev_accepted_proposals
 ```
 
-To create a posterior distribution for the 2nd row:
+The posterior distribution is available in the model instance:
 
 ```python
-# Create a model that uses the full data set
-models_more_data = Models(
-    [
-        Model(
-            name='flat prior',
-            priors=[
-                Beta(alpha=1, beta=1, name="beta"),
-            ],
-            simulate=simulate,
-            prior_model_proba=1
-        ),
-    ],
-)
-
-# Compute the posterior distribution for the models object with all the data.
-abc_smc(
-    num_particles,
-    epsilons=epsilons,
-    models=models_more_data,
-    obs=obs,
-    distance=distance,
-)
-
-```
-
-_Optional_. The code used to generate the images above:
-
-```python
-# Assuming you have an "images" folder in your current working directory:
-create_images_from_data(
-    save_path=Path(os.getenv("PWD")) / "images" / "beta_binomial_example.png",
-    data={
-        'title': "Comparison of Prior & Posterior of a"\
-        + " Beta-Binomial Model",
-        'data': [
-            [
-                {
-                    'title': 'Posterior after 1 success out of 1',
-                    'data': [
-                        models[0].prev_accepted_proposals.rename(
-                            columns={'beta': 'posterior (eps: [3,2,1,0])'}
-                        ),
-                        pd.DataFrame(
-                            {
-                                'reference_posterior': np.random.beta(
-                                    2, 1, num_particles)
-                            }
-                        ),
-                        pd.DataFrame(
-                            {
-                                'prior': np.random.beta(
-                                    1, 1, num_particles)
-                            }
-                        )
-                    ]
-                },
-                {
-                    'title': 'Full update with 6 successes out of 9',
-                    'data': [
-                        models_more_data[0].prev_accepted_proposals.rename(
-                            columns={'beta': 'posterior (eps: [3,2,1,0])'}
-                        ),
-                        pd.DataFrame(
-                            {
-                                'reference_posterior': np.random.beta(
-                                    obs.sum() + 1,
-                                    len(obs) - obs.sum() + 1,
-                                    num_particles
-                                )
-                            }
-                        ),
-                        pd.DataFrame(
-                            {
-                                'prior': np.random.beta(
-                                    1, 1, num_particles)
-                            }
-                        )
-                    ]
-                }
-            ]
-        ]
-    },
-    xlim=(0, 1),
-    figsize_mult=(5, 5)
-)
+models[0].prev_accepted_proposals
 ```
 
 ## Installation
