@@ -23,7 +23,46 @@ def test_beta_binomial_1():
     num_particles = 2000
 
     # The cutoff(s) that decide whether or not to accept a particle.
-    epsilons = [0]
+    epsilon_sets = [[0], [1, 0], [3, 2, 1, 0]]
+    column = [
+        {
+            'title': 'Posterior after 1 success out of 1',
+            'data': [
+                pd.DataFrame(
+                    {
+                        'reference_posterior': np.random.beta(
+                            2, 1, num_particles)
+                    }
+                ),
+                pd.DataFrame(
+                    {
+                        'prior': np.random.beta(
+                            1, 1, num_particles)
+                    }
+                )
+            ]
+        },
+        {
+            'title': 'Full update with 6 successes out of 9',
+            'data': [
+                pd.DataFrame(
+                    {
+                        'reference_posterior': np.random.beta(
+                            obs.sum() + 1,
+                            len(obs) - obs.sum() + 1,
+                            num_particles
+                        )
+                    }
+                ),
+                pd.DataFrame(
+                    {
+                        'prior': np.random.beta(
+                            1, 1, num_particles)
+                    }
+                )
+            ]
+        }
+    ]
 
     def distance(x, y):
         """
@@ -64,74 +103,74 @@ def test_beta_binomial_1():
             size=len(actual_data)
         )
 
-    # Create a model. A model is a set of priors, plus a simulator
-    models = Models(
-        [
-            Model(
-                name='flat prior',
-                priors=[
-                    Beta(alpha=1, beta=1, name="beta"),
-                ],
-                simulate=simulate,
-                prior_model_proba=1
-            ),
-        ],
-        perturbation_param=0.9
-    )
+    models_list = []
 
-    # Compute the posterior distribution.
-    abc_smc(
-        num_particles,
-        epsilons,
-        models,
-        np.array([obs[0]]),
-        distance,
-    )
+    for i, epsilons in enumerate(epsilon_sets):
+        # Create a model. A model is a set of priors, plus a simulator
+        models = Models(
+            [
+                Model(
+                    name='flat prior',
+                    priors=[
+                        Beta(alpha=1, beta=1, name="beta"),
+                    ],
+                    simulate=simulate,
+                    prior_model_proba=1
+                ),
+            ],
+            perturbation_param=0.9
+        )
 
-    # Create a model that uses the full data set
-    models_more_data = Models(
-        [
-            Model(
-                name='flat prior',
-                priors=[
-                    Beta(alpha=1, beta=1, name="beta"),
-                ],
-                simulate=simulate,
-                prior_model_proba=1
-            ),
-        ],
-    )
+        models_list.append(models)
 
-    # Compute the posterior distribution for the models object with all the
-    # data.
-    abc_smc(
-        num_particles,
-        epsilons=epsilons,
-        models=models_more_data,
-        obs=obs,
-        distance=distance,
-    )
+        # Compute the posterior distribution.
+        abc_smc(
+            num_particles,
+            epsilons,
+            models,
+            np.array([obs[0]]),
+            distance,
+        )
 
+        column[0]['data'].append(
+            models[0].prev_accepted_proposals.rename(
+                columns={'beta': f'eps: {epsilons}'}
+            )
+        )
+
+        # Create a model that uses the full data set
+        models_more_data = Models(
+            [
+                Model(
+                    name='flat prior',
+                    priors=[
+                        Beta(alpha=1, beta=1, name="beta"),
+                    ],
+                    simulate=simulate,
+                    prior_model_proba=1
+                ),
+            ],
+        )
+
+        models_list.append(models_more_data)
+        # Compute the posterior distribution for the models object with all the
+        # data.
+        abc_smc(
+            num_particles,
+            epsilons=epsilons,
+            models=models_more_data,
+            obs=obs,
+            distance=distance,
+        )
+
+        column[1]['data'].append(
+            models_more_data[0].prev_accepted_proposals.rename(
+                columns={'beta': f'eps: {epsilons}'}
+            )
+        )
     # The posterior distribution (i.e. accepted particles that are compatible
     # "enough" with the data and model) are stored in
     # models[0].prev_accepted_proposals
-
-    assert_similar_enough_distribution(
-        models[0].prev_accepted_proposals,
-        pd.DataFrame({'beta': np.random.beta(2, 1, num_particles)})
-    )
-
-    assert_similar_enough_distribution(
-        models_more_data[0].prev_accepted_proposals,
-        pd.DataFrame(
-            {
-                'beta': np.random.beta(
-                    obs.sum() + 1, len(obs) - obs.sum() + 1,
-                    num_particles
-                )
-            }
-        )
-    )
 
     # Assuming you have an "images" folder in your current working directory:
     create_images_from_data(
@@ -140,56 +179,32 @@ def test_beta_binomial_1():
         data={
             'title': "Comparison of Prior & Posterior of a Beta-Binomial",
             'data': [
-                [
-                    {
-                        'title': 'Posterior after 1 success out of 1',
-                        'data': [
-                            models[0].prev_accepted_proposals.rename(
-                                columns={'beta': f'eps: {epsilons}'}
-                            ),
-                            pd.DataFrame(
-                                {
-                                    'reference_posterior': np.random.beta(
-                                        2, 1, num_particles)
-                                }
-                            ),
-                            pd.DataFrame(
-                                {
-                                    'prior': np.random.beta(
-                                        1, 1, num_particles)
-                                }
-                            )
-                        ]
-                    },
-                    {
-                        'title': 'Full update with 6 successes out of 9',
-                        'data': [
-                            models_more_data[0].prev_accepted_proposals.rename(
-                                columns={'beta': f'eps: {epsilons}'}
-                            ),
-                            pd.DataFrame(
-                                {
-                                    'reference_posterior': np.random.beta(
-                                        obs.sum() + 1,
-                                        len(obs) - obs.sum() + 1,
-                                        num_particles
-                                    )
-                                }
-                            ),
-                            pd.DataFrame(
-                                {
-                                    'prior': np.random.beta(
-                                        1, 1, num_particles)
-                                }
-                            )
-                        ]
-                    }
-                ]
+               column
             ]
         },
         xlim=(0, 1),
         figsize_mult=(5, 5)
     )
+
+    for i in range(len(models_list)):
+        if i % 2 == 0:
+            assert_similar_enough_distribution(
+                models_list[i][0].prev_accepted_proposals,
+                pd.DataFrame({'beta': np.random.beta(2, 1, num_particles)})
+            )
+
+        else:
+            assert_similar_enough_distribution(
+                models_list[i][0].prev_accepted_proposals,
+                pd.DataFrame(
+                    {
+                        'beta': np.random.beta(
+                            obs.sum() + 1, len(obs) - obs.sum() + 1,
+                            num_particles
+                        )
+                    }
+                )
+            )
 
 
 def test_beta_binomial_non_abc_rejection_sampling():
