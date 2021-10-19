@@ -75,6 +75,7 @@ class Prior(ABC):
     def __init__(self, distribution, name):
         self.distribution = distribution
         self.name = name
+        self.constant_dev = None
 
     def compute_weight(
         self,
@@ -100,11 +101,16 @@ class Prior(ABC):
         """
         numerator = self.pdf(particle)
 
+        if self.constant_dev is not None:
+            std = self.constant_dev
+        else:
+            std = prev_std
+
         denominator = (
             prev_weights
             * Normal(
                 prev_values,
-                prev_std
+                std
             ).pdf(particle)
         ).sum()
 
@@ -207,11 +213,6 @@ class Beta(Prior):
         self.name = name
         self.distribution = beta_dist(alpha, beta)
         self.distribution_from_samples_class = BetaFromSamples
-        if std_div is None:
-            self.std_div = 10.0
-        else:
-            self.std_div = std_div
-
         self.constant_dev = None
 
     def perturb(self, value, std):
@@ -233,7 +234,7 @@ class Beta(Prior):
                     "Did not succeed producing viable perturbation."
                 )
 
-            perturbation = np.random.normal(value, standard_dev / self.std_div)
+            perturbation = np.random.normal(value, standard_dev)
             counter += 1
 
         return perturbation
