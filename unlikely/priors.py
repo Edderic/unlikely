@@ -183,13 +183,10 @@ class Prior(ABC):
         Parameters:
             samples: np.array
         """
-        try:
-            self.distribution = self.distribution_from_samples_class(
-                samples,
-                {}
-            )
-        except TypeError as e:
-            import pdb; pdb.set_trace()
+        self.distribution = self.distribution_from_samples_class(
+            samples,
+            {}
+        )
 
         self.use_constant_dev()
 
