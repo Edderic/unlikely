@@ -70,16 +70,32 @@ class Prior(ABC):
         compute_weight
         get_name
 
-    Methods required for implementation  for subclasses:
+    Methods required for implementation for subclasses:
         compute_weight
         perturb
         pdf
         sample
         __repr__
     """
-    def __init__(self, distribution, name):
+    def __init__(self, distribution, name, std_div=None):
+        """
+        Parameters:
+            distribution: A distribution instance
+                Has methods such as "pdf", "rvs"
+            name: string
+                Name of the prior
+            std_div: float. Defaults to 1.0
+                Greater than 0. The bigger the value, the smaller the width of
+                the perturbation kernel.
+        """
         self.distribution = distribution
         self.name = name
+        self.constant_dev = None
+
+        if std_div is None:
+            self.std_div = 1.0
+        else:
+            self.std_div = std_div
 
     def compute_weight(
         self,
