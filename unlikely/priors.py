@@ -498,4 +498,8 @@ class HalfCauchy(Prior):
         return perturbation
 
     def __repr__(self):
-        return f"HalfCauchy(loc: {self.loc}, scale: {self.scale})"
+        """
+        Print object in a more descriptive way
+        """
+        return f"HalfCauchy(loc: {self.loc}, scale: {self.scale}, " \
+            + "name: {self.name})"
