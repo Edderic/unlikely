@@ -80,7 +80,6 @@ class Prior(ABC):
     def __init__(self, distribution, name):
         self.distribution = distribution
         self.name = name
-        self.constant_dev = None
 
     def compute_weight(
         self,
@@ -107,9 +106,9 @@ class Prior(ABC):
         numerator = self.pdf(particle)
 
         if self.constant_dev is not None:
-            std = self.constant_dev
+            std = self.constant_dev / self.std_div
         else:
-            std = prev_std
+            std = prev_std / self.std_div
 
         denominator = (
             prev_weights
@@ -136,7 +135,7 @@ class Prior(ABC):
 
         For perturbation, use a constant standard deviation.
         """
-        self.constant_dev = self.sample(10000).std()
+        self.constant_dev = self.sample(10000).std() / self.std_div
 
     @abstractmethod
     def perturb(self, value, std):
@@ -173,10 +172,6 @@ class Prior(ABC):
 
         return self.distribution.rvs(size)
 
-    # @abstractmethod
-    # def use_sampling_distribution(self, samples):
-        # self.
-
     @abstractmethod
     def __repr__(self):
         pass
@@ -188,8 +183,15 @@ class Prior(ABC):
         Parameters:
             samples: np.array
         """
-        if self.constant_dev is not None:
-            self.constant_dev = samples.std()
+        try:
+            self.distribution = self.distribution_from_samples_class(
+                samples,
+                {}
+            )
+        except TypeError as e:
+            import pdb; pdb.set_trace()
+
+        self.use_constant_dev()
 
 
 class BetaFromSamples(DistributionFromSamples):
@@ -228,6 +230,7 @@ class Beta(Prior):
         alpha,
         beta,
         name=None,
+        std_div=None
     ):
         self.alpha = alpha
         self.beta = beta
@@ -235,6 +238,10 @@ class Beta(Prior):
         self.distribution = beta_dist(alpha, beta)
         self.distribution_from_samples_class = BetaFromSamples
         self.constant_dev = None
+        if std_div is None:
+            self.std_div = 1.0
+        else:
+            self.std_div = std_div
         Prior.__init__(self, self.distribution, name)
 
     def perturb(self, value, std):
@@ -246,9 +253,9 @@ class Beta(Prior):
         perturbation = -1
 
         if self.constant_dev is not None:
-            standard_dev = self.constant_dev
+            standard_dev = self.constant_dev / self.std_div
         else:
-            standard_dev = std
+            standard_dev = std / self.std_div
 
         while self.pdf(perturbation) == 0:
             if counter > 100:
@@ -335,7 +342,7 @@ class Uniform(Prior):
             }
         )
 
-        super().use_distribution_from_samples(samples)
+        self.use_constant_dev(samples)
 
 
 class UniformFromSamples(DistributionFromSamples):
@@ -343,7 +350,7 @@ class UniformFromSamples(DistributionFromSamples):
     Uniform Distribution from Samples
     """
     def __init__(self, samples, args):
-        super(UniformFromSamples, self).__init__(samples, args)
+        super().__init__(samples, args)
 
     def __repr__(self):
         return "UniformFromSamples()"

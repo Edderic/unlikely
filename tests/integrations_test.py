@@ -574,7 +574,6 @@ def test_beta_binomial_non_abc_rejection_sampling():
         1, 1, 1, 0,
         0, 1, 1, 0, 1, 1, 1
     ])
-    epsilons = [0]
 
     def distance(x, y):
         """
