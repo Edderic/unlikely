@@ -280,6 +280,7 @@ class Uniform(Prior):
         alpha,
         beta,
         name=None,
+        std_div=None
     ):
         """
         Parameters:
@@ -288,14 +289,22 @@ class Uniform(Prior):
             beta: float
                 Upper-bound
             name: string
+            std_div: numeric. Defaults to 1
+                Bigger values will make perturbation width smaller.
         """
+        self.distribution = uniform(alpha, beta - alpha)
+        Prior.__init__(self, self.distribution, name)
+
         self.alpha = alpha
         self.beta = beta
         self.name = name
-        self.distribution = uniform(alpha, beta - alpha)
         self.distribution_from_samples_class = UniformFromSamples
         self.constant_dev = None
-        Prior.__init__(self, self.distribution, name)
+
+        if std_div is None:
+            self.std_div = 1.0
+        else:
+            self.std_div = std_div
 
     def perturb(self, value, std):
         """
@@ -339,7 +348,7 @@ class Uniform(Prior):
             }
         )
 
-        self.use_constant_dev(samples)
+        self.use_constant_dev()
 
 
 class UniformFromSamples(DistributionFromSamples):
