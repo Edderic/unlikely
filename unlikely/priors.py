@@ -368,7 +368,7 @@ class Uniform(Prior):
         Parameters:
             samples: np.array
         """
-        self.distribution = self.distribution_from_samples_class(
+        self.distribution = self.distribution_from_samples_class()(
             samples,
             {
                 'lower_bound': self.alpha,
@@ -418,14 +418,20 @@ class Normal(Prior):
     """
     Normal Distribution
     """
-    def __init__(self, mean, std, name=None):
+    def __init__(self, mean, std, name=None, std_div=None):
         self.mean = mean
         self.std = std
         self.name = name
         self.distribution = norm(mean, std)
         self.distribution_from_samples_class = NormalFromSamples
         self.constant_dev = None
-        Prior.__init__(self, self.distribution, name)
+        Prior.__init__(self, self.distribution, name, std_div)
+
+    def distribution_from_samples_class(self):
+        """
+        Normal distribution from Samples
+        """
+        return NormalFromSamples
 
     def perturb(self, value, std):
         if self.constant_dev is not None:
