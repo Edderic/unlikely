@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 
-class Model():
+class Model():  # pylint:disable=too-many-instance-attributes
     """
     Model object has a bunch of "get_" methods to emphasize that these methods
     are not mutating state within the model instance. This lets us do
@@ -26,7 +26,7 @@ class Model():
         get_prior_model_proba
         get_sub_weights
     """
-    def __init__(
+    def __init__(  # pylint:disable=too-many-arguments
         self,
         name,
         priors,
@@ -132,9 +132,8 @@ class Model():
         }
 
         self.prior_model_proba = prior_model_proba
-        self.simulate = simulate
-        # TODO: this might change when the list of epsilon is not fixed in
-        # advance.
+        self.simulate_func = simulate
+
         self.accepted_proposals = [
             []
         ]
@@ -231,13 +230,13 @@ class Model():
         """
         if epoch == 0:
             return {k: p.sample() for k, p in self.priors.items()}
-        else:
-            i = np.random.choice(
-                list(range(len(self.accepted_proposals[epoch-1]))),
-                p=self.weights[epoch-1]
-            )
 
-            return self.accepted_proposals[epoch-1][i]
+        i = np.random.choice(
+            list(range(len(self.accepted_proposals[epoch-1]))),
+            p=self.weights[epoch-1]
+        )
+
+        return self.accepted_proposals[epoch-1][i]
 
     def get_perturbed_proposal(self, epoch=None):
         """
@@ -321,19 +320,19 @@ class Model():
 
         if epoch == 0 or not self.use_weighting_scheme:
             return np.ones(prior_len)
-        else:
-            return {
-                prior_name: prior.compute_weight(
-                    particle=perturbed[prior_name],
-                    prev_weights=self.prev_weights,
-                    prev_values=self.prev_accepted_proposals.loc[
-                        :, prior_name
-                    ],
-                    prev_std=self.prev_stds[prior_name],
-                )
 
-                for (prior_name, prior) in self.priors.items()
-            }
+        return {
+            prior_name: prior.compute_weight(
+                particle=perturbed[prior_name],
+                prev_weights=self.prev_weights,
+                prev_values=self.prev_accepted_proposals.loc[
+                    :, prior_name
+                ],
+                prev_std=self.prev_stds[prior_name],
+            )
+
+            for (prior_name, prior) in self.priors.items()
+        }
 
     def cache_results(self, epoch=None):
         """
@@ -385,7 +384,7 @@ class Model():
         # equal to 1. Thus, we won't be overweighting continuous variables over
         # discrete.
 
-        # TODO:
+        # NOTE:
         # Probably should do this in logspace since we're
         # multiplying a bunch of small numbers
 
@@ -409,16 +408,23 @@ class Model():
 
         self.prev_weights = np.array(self.weights[epoch])
 
-    def reset_prev_weights(self):
-        if self.num_epochs_processed > 0:
-            self.prev_weights = np.ones(
-                len(self.weights[self.num_epochs_processed - 1])
-            )
-
     def simulate(self, args):
-        return self.simulate(self.priors, args)
+        """
+        Call the simulation function that was passed in.
+
+        Parameters:
+            args: dict
+                Gets passed in to the simulation function.
+
+        Returns: data
+        """
+        return self.simulate_func(self.priors, args)
 
     def increment_num_epochs_processed(self):
+        """
+        Useful for situations when we're updating the priors in a mini-batch
+        fashion.
+        """
         self.num_epochs_processed += 1
 
     def use_distribution_from_samples(self):
@@ -453,8 +459,13 @@ class Models():
         """
         self.models = models
 
-        # TODO: check for uniqueness
-        self.mapping = {m.get_name(): m for m in models}
+        self.mapping = {}
+        for model in models:
+            name = model.get_name()
+            if name in self.mapping.keys():
+                raise ValueError("Names for models are not unique.")
+
+            self.mapping[name] = model
 
         if perturbation_param is None:
             perturbation_param = 0.9
@@ -471,11 +482,10 @@ class Models():
         models. In other words, doing [m for m in models] where models is the
         Models instance, we would get instances of Model.
         """
-        for m in self.models:
-            yield m
+        for model in self.models:
+            yield model
 
     def __getitem__(self, index):
-        # TODO: we might want to save the models by name?
         return self.models[index]
 
     def find_by_name(self, name):
@@ -489,7 +499,6 @@ class Models():
         """
         Returns: list[Model]
         """
-        # TODO: we might want to save the models by name?
         return self.models
 
     def get_posterior_probabilities(self, epoch=None):
@@ -512,13 +521,13 @@ class Models():
             m.get_name(): p for m, p in zip(self.models, probas)
         }
 
-    def get_perturbed_proposal(self, epoch=None, p=None):
+    def get_perturbed_proposal(self, epoch=None, perturb_proba=None):
         """
         Parameters:
             epoch: integer
                 The integer that represents the population of interest.
 
-            p: float
+            perturb_proba: float
                 A perturbation probability. This will let us decide whether or
                 not to randomly choose a model to try sampling from.
         Returns: Model
@@ -526,16 +535,16 @@ class Models():
         if epoch is None:
             epoch = self.num_epochs_processed
 
-        if p is None:
-            p = self.perturbation_param
+        if perturb_proba is None:
+            perturb_proba = self.perturbation_param
 
-        if np.random.binomial(n=1, p=p):
+        if np.random.binomial(n=1, p=perturb_proba):
             return self.get_proposal(epoch)
-        else:
-            # Uniformly pick any model
-            probas = np.ones(len(self.get_models()))
-            probas = probas / probas.sum()
-            return np.random.choice(self.get_models(), p=probas)
+
+        # Uniformly pick any model
+        probas = np.ones(len(self.get_models()))
+        probas = probas / probas.sum()
+        return np.random.choice(self.get_models(), p=probas)
 
     def get_proposal(self, epoch):
         """
@@ -556,14 +565,13 @@ class Models():
         return np.random.choice(self.get_models(), p=probas)
 
     def increment_num_epochs_processed(self):
+        """
+        Useful for mini-batching.
+        """
         self.num_epochs_processed += 1
 
         for model in self.models:
             model.increment_num_epochs_processed()
-
-    def reset_prev_weights(self):
-        for model in self.models:
-            model.reset_prev_weights()
 
     def use_distribution_from_samples(self):
         """
