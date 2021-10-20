@@ -4,21 +4,7 @@ Contains the abc_smc engine.
 import logging
 
 from dask.distributed import as_completed
-import numpy as np
 from tqdm import tqdm
-
-from .priors import Beta, Normal, HalfCauchy
-from .models import Models, Model
-
-def simulate(priors, size):
-    return np.random.normal(
-        loc=priors['mu'],
-        scale=priors['sigma'],
-        size=size
-    )
-
-def distance(x, y):
-    return (x.mean() - y.mean())**2 + (x.std() - y.std())**2
 
 
 def try_accepting_proposals(
@@ -79,7 +65,8 @@ def try_accepting_proposals(
 
     return model.get_name(), perturbed_particle, sub_weights
 
-def abc_smc(
+
+def abc_smc(  # pylint:disable=too-many-locals,too-many-arguments
     num_particles,
     epsilons,
     models,
@@ -114,13 +101,13 @@ def abc_smc(
 
     References:
 
-    Tutorial on ABC rejection and ABC SMC for parameter estimation and model selection:
-    https://arxiv.org/abs/0910.4472
+    Tutorial on ABC rejection and ABC SMC for parameter estimation and model
+    selection: https://arxiv.org/abs/0910.4472
 
     Approximate Bayesian computation scheme for parameter inference and model
     selection in dynamical systems.
-    Tina Toni, David Welch, Natalja Strelkowa, Andreas Ipsen, Michael P.H. Stumpf
-    https://arxiv.org/abs/0901.1925
+    Tina Toni, David Welch, Natalja Strelkowa, Andreas Ipsen, Michael P.H.
+    Stumpf: https://arxiv.org/abs/0901.1925
 
     https://stats.stackexchange.com/questions/326071/how-do-i-calculate-the-weights-in-abc-smc
     """
@@ -133,9 +120,9 @@ def abc_smc(
         logging.debug("Current epoch and epsilon: %s, %s", epoch, epsilon)
         num_particles_accepted = 0
 
-        if client == None:
+        if client is None:
             for _ in tqdm(range(num_particles)):
-                model_name, proposal, sub_wt_particle = try_accepting_proposals(
+                model_name, proposal, weight = try_accepting_proposals(
                     obs,
                     epoch,
                     models,
@@ -143,10 +130,15 @@ def abc_smc(
                     epsilon
                 )
 
-                models.find_by_name(model_name).accept_proposal(proposal, sub_wt_particle)
+                models.find_by_name(model_name).accept_proposal(
+                    proposal, weight
+                )
 
                 num_particles_accepted += 1
-                logging.debug("num_particles_accepted: %s", num_particles_accepted)
+                logging.debug(
+                    "num_particles_accepted: %s",
+                    num_particles_accepted
+                )
         else:
             futures = []
 
@@ -162,20 +154,25 @@ def abc_smc(
                     )
                 )
 
-            for f in as_completed(futures):
+            for future in as_completed(futures):
                 # Accepted
-                model_name, proposal, sub_wt_particle = f.result()
-                models.find_by_name(model_name).accept_proposal(proposal, sub_wt_particle)
+                model_name, proposal, sub_wt_particle = future.result()
+                models.find_by_name(model_name).accept_proposal(
+                    proposal, sub_wt_particle
+                )
 
                 num_particles_accepted += 1
-                logging.debug("num_particles_accepted: %s", num_particles_accepted)
+                logging.debug(
+                    "num_particles_accepted: %s",
+                    num_particles_accepted
+                )
 
                 # Release from memory so garbage collection can take place.
-                futures.remove(f)
-                del f
+                futures.remove(future)
+                del future
 
-        for m in models:
-            m.cache_results()
+        for model in models:
+            model.cache_results()
 
         models.increment_num_epochs_processed()
 
