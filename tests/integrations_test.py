@@ -13,7 +13,6 @@ from ..unlikely.misc import create_images_from_data
 from ..unlikely.priors import Beta, Uniform
 
 from .conftest import assert_similar_enough_distribution
-import pytest
 
 
 def test_beta_binomial_1():
@@ -208,7 +207,6 @@ def test_beta_binomial_1():
             )
 
 
-@pytest.mark.f
 def test_uniform_binomial_1():
     # A 1 is a "success", and a 0 is a "failure"
     obs = np.array([1, 0, 1, 1, 1, 0, 1, 0, 1])
@@ -401,6 +399,167 @@ def test_uniform_binomial_1():
             )
 
 
+def test_uniform_binomial_2():
+    num_particles = 2000
+    obs = np.array([
+        1, 1, 1,
+        1, 1, 1, 0,
+        0, 1, 1, 0, 1, 1, 1
+    ])
+
+    epsilons_list = [[0], [3, 2, 1, 0]]
+
+    def distance(x, y):
+        """
+        Compare the number of ones in one vs. the other.
+        """
+        return abs(x.sum() - y.sum())
+
+    def simulate(priors, obs):
+        """
+        Data is binomially distributed.
+        """
+        return np.random.binomial(n=1, p=priors['uniform'], size=len(obs))
+
+    data_to_display = [
+        [
+            {
+                'title': f"obs: {obs[:3]}",
+                'data': []
+            },
+            {
+                'title': f"after {obs[3:7]}",
+                'data': []
+            },
+            {
+                'title': f"after {obs[7:]}",
+                'data': []
+            },
+            {
+                'title': "Full batch",
+                'data': []
+            }
+        ]
+    ]
+
+    for row, epsilons in enumerate(epsilons_list):
+        models = Models(
+            [
+                Model(
+                    name='Uniform over (0.5, 1)',
+                    priors=[
+                        Uniform(alpha=0.5, beta=1, name="uniform"),
+                    ],
+                    simulate=simulate,
+                    prior_model_proba=1,
+                ),
+            ]
+        )
+
+        # Update with 1st batch
+        abc_smc(
+            num_particles=num_particles,
+            epsilons=epsilons,
+            models=models,
+            obs=obs[:3],
+            distance=distance,
+        )
+
+        data_to_display[0][0]['data'].append(
+            pd.DataFrame(models[0].prev_accepted_proposals).rename(
+                columns={'uniform': f'eps: {epsilons}'}
+            )
+        )
+
+        # The posterior distribution becomes the prior
+        models.use_distribution_from_samples()
+
+        # Update with 2nd batch
+        abc_smc(
+            num_particles=num_particles,
+            epsilons=epsilons,
+            models=models,
+            obs=obs[3:7],
+            distance=distance,
+        )
+
+        # The posterior distribution becomes the prior
+        models.use_distribution_from_samples()
+
+        data_to_display[0][1]['data'].append(
+            pd.DataFrame(
+                models[0].prev_accepted_proposals).rename(
+                columns={'uniform': f'eps: {epsilons}'}
+            )
+        )
+
+        # Update with 3rd batch
+        abc_smc(
+            num_particles=num_particles,
+            epsilons=epsilons,
+            models=models,
+            obs=obs[7:],
+            distance=distance,
+        )
+
+        data_to_display[0][2]['data'].append(
+            pd.DataFrame(
+                models[0].prev_accepted_proposals).rename(
+                columns={'uniform': f'eps: {epsilons}'}
+            )
+        )
+
+        models_full_batch = Models(
+            [
+                Model(
+                    name='flat prior',
+                    priors=[
+                        Uniform(alpha=0.5, beta=1, name="uniform"),
+                    ],
+                    simulate=simulate,
+                    prior_model_proba=1,
+                ),
+            ]
+        )
+
+        # Update full batch
+        abc_smc(
+            num_particles=num_particles,
+            epsilons=epsilons,
+            models=models_full_batch,
+            obs=obs,
+            distance=distance,
+        )
+
+        data_to_display[0][3]['data'].append(
+            pd.DataFrame(
+                models_full_batch[0].prev_accepted_proposals
+            ).rename(columns={'uniform': f'eps: {epsilons}'})
+        )
+
+    create_images_from_data(
+        data={
+            'title': '3 batch updates',
+            'data': data_to_display
+        },
+        xlim=(0, 1),
+        figsize_mult=(2, 8),
+        save_path=Path(
+            os.getenv("PWD")
+        ) / "images" / "uniform_half_to_1_binomial_mini_batch.png",
+    )
+
+    (models[0].prev_accepted_proposals < 0.5).sum()['uniform'] == 0
+    (models_full_batch[0].prev_accepted_proposals < 0.5).sum()['uniform'] == 0
+    assert (models[0].prev_accepted_proposals < 0.5).sum()['uniform'] == 0
+    assert (models_full_batch[0].prev_accepted_proposals < 0.5)\
+        .sum()['uniform'] == 0
+    assert (models[0].prev_accepted_proposals > 1)\
+        .sum()['uniform'] == 0
+    assert (models_full_batch[0].prev_accepted_proposals > 1)\
+        .sum()['uniform'] == 0
+
+
 def test_beta_binomial_non_abc_rejection_sampling():
     """
     To see how settings affect the dispersion of the posterior distribution,
@@ -481,7 +640,6 @@ def test_beta_binomial_non_abc_rejection_sampling():
                                 alpha=1,
                                 beta=1,
                                 name="beta",
-                                std_div=beta_std_div,
                             )
                         ],
                         simulate=simulate,

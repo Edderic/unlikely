@@ -330,8 +330,8 @@ class Uniform(Prior):
         self.distribution = self.distribution_from_samples_class(
             samples,
             {
-                'upper_bound': self.alpha,
-                'lower_bound': self.beta
+                'lower_bound': self.alpha,
+                'upper_bound': self.beta
             }
         )
 
