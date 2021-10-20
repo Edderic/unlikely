@@ -192,6 +192,16 @@ class Prior(ABC):
     def __repr__(self):
         pass
 
+    @abstractmethod
+    def distribution_from_samples_class(self):
+        """
+        Will be used for instantiating a prior using samples.
+
+        Parameters:
+            samples: np.array
+            args: dict
+        """
+
     def use_distribution_from_samples(self, samples):
         """
         Creates a distribution out of samples.
@@ -199,7 +209,8 @@ class Prior(ABC):
         Parameters:
             samples: np.array
         """
-        self.distribution = self.distribution_from_samples_class(
+        samples_class = self.distribution_from_samples_class()
+        self.distribution = samples_class(
             samples,
             {}
         )
@@ -249,13 +260,14 @@ class Beta(Prior):
         self.beta = beta
         self.name = name
         self.distribution = beta_dist(alpha, beta)
-        self.distribution_from_samples_class = BetaFromSamples
         self.constant_dev = None
-        if std_div is None:
-            self.std_div = 1.0
-        else:
-            self.std_div = std_div
-        Prior.__init__(self, self.distribution, name)
+        Prior.__init__(self, self.distribution, name, std_div)
+
+    def distribution_from_samples_class(self):
+        """
+        Beta distribution from Samples
+        """
+        return BetaFromSamples
 
     def perturb(self, value, std):
         """
@@ -309,18 +321,18 @@ class Uniform(Prior):
                 Bigger values will make perturbation width smaller.
         """
         self.distribution = uniform(alpha, beta - alpha)
-        Prior.__init__(self, self.distribution, name)
+        Prior.__init__(self, self.distribution, name, std_div)
 
         self.alpha = alpha
         self.beta = beta
         self.name = name
-        self.distribution_from_samples_class = UniformFromSamples
         self.constant_dev = None
 
-        if std_div is None:
-            self.std_div = 1.0
-        else:
-            self.std_div = std_div
+    def distribution_from_samples_class(self):
+        """
+        Uniform distribution from Samples
+        """
+        return UniformFromSamples
 
     def perturb(self, value, std):
         """
