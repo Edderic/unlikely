@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 """
 Models module.
 
@@ -8,6 +6,8 @@ Classes
     Model
     Models
 """
+import numpy as np
+import pandas as pd
 
 
 class Model():
@@ -230,7 +230,7 @@ class Model():
 
         """
         if epoch == 0:
-            return { k: p.sample() for k, p in self.priors.items() }
+            return {k: p.sample() for k, p in self.priors.items()}
         else:
             i = np.random.choice(
                 list(range(len(self.accepted_proposals[epoch-1]))),
@@ -258,7 +258,7 @@ class Model():
                 Names of the corresponding priors.
             Values: Prior
         """
-        if epoch == None:
+        if epoch is None:
             epoch = self.num_epochs_processed
 
         proposal = self.get_particle_proposal(epoch)
@@ -267,7 +267,7 @@ class Model():
             return proposal
 
         perturbed = {
-            prior_name:prior.perturb(
+            prior_name: prior.perturb(
                 proposal[prior_name],
                 self.prev_stds[prior_name]
             )
@@ -363,7 +363,7 @@ class Model():
         method also generates a single weight for each accepted particle.
         """
 
-        if epoch == None:
+        if epoch is None:
             epoch = self.num_epochs_processed
 
         self.prev_accepted_proposals = pd.DataFrame(
@@ -411,7 +411,9 @@ class Model():
 
     def reset_prev_weights(self):
         if self.num_epochs_processed > 0:
-            self.prev_weights = np.ones(len(self.weights[self.num_epochs_processed - 1]))
+            self.prev_weights = np.ones(
+                len(self.weights[self.num_epochs_processed - 1])
+            )
 
     def simulate(self, args):
         return self.simulate(self.priors, args)
@@ -552,8 +554,6 @@ class Models():
             )
             probas = weights / weights.sum()
         return np.random.choice(self.get_models(), p=probas)
-            # Look at the previous epoch's accepted particles
-            # For each model, sum the weights of the
 
     def increment_num_epochs_processed(self):
         self.num_epochs_processed += 1
@@ -574,7 +574,8 @@ class Models():
 
     def use_constant_dev(self):
         """
-        Tells each model to use constant standard deviation.
+        Tells each model to use constant standard deviation for perturbation
+        and weighting.
         """
         for model in self.models:
             model.use_constant_dev()
