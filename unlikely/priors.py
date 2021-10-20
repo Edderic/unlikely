@@ -464,14 +464,14 @@ class HalfCauchy(Prior):
     """
     Half Cauchy Distribution
     """
-    def __init__(self, loc, scale, name):
+    def __init__(self, loc, scale, name, std_div=None):
         self.loc = loc
         self.scale = scale
         self.distribution = halfcauchy(loc, scale)
         self.name = name
         self.distribution_from_samples_class = HalfCauchyFromSamples
         self.constant_dev = None
-        Prior.__init__(self, self.distribution, name)
+        Prior.__init__(self, self.distribution, name, std_div)
 
     def perturb(self, value, std):
         """
