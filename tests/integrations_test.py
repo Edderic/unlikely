@@ -589,8 +589,8 @@ def test_beta_binomial_non_abc_rejection_sampling():
 
     data_to_display = []
 
-    constant_devs = [False, False, True]
-    beta_std_divs = [1.0, 10.0, 1.0]
+    constant_devs = [True, True, True]
+    beta_std_divs = [1.0, 2.0, 3.0]
     cols = list(range(len(beta_std_divs)))
 
     for col, beta_std_div, use_constant_dev in zip(
@@ -627,9 +627,12 @@ def test_beta_binomial_non_abc_rejection_sampling():
         ])
 
         obs_indices = [(0, 3), (3, 7), (7, len(obs))]
-        epsilon_sets = [[0], [1, 0], [3, 2, 1, 0]]
+        epsilon_sets = [[0], [0], [1, 0], [3, 2, 1, 0]]
+        perturbations_config = [False, True, True, True]
 
-        for i, epsilons in enumerate(epsilon_sets):
+        for i, (epsilons, use_perturbation) in enumerate(
+            zip(epsilon_sets, perturbations_config)
+        ):
             models = Models(
                 [
                     Model(
@@ -643,6 +646,7 @@ def test_beta_binomial_non_abc_rejection_sampling():
                         ],
                         simulate=simulate,
                         prior_model_proba=1,
+                        perturb=use_perturbation
                     ),
                 ],
                 use_constant_dev=use_constant_dev
@@ -678,7 +682,8 @@ def test_beta_binomial_non_abc_rejection_sampling():
                     pd.DataFrame(models[0].prev_accepted_proposals)
                     .rename(
                         columns={
-                            'beta': f'after batch {j + 1}, eps: {epsilons}'
+                            'beta': f'after batch {j + 1}, perturb: '
+                            + f'{use_perturbation}, eps: {epsilons}'
                         }
                     )
                 )
