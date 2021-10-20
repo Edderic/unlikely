@@ -132,7 +132,7 @@ class Model():  # pylint:disable=too-many-instance-attributes
         }
 
         self.prior_model_proba = prior_model_proba
-        self.simulate_func = simulate
+        self.simulate = simulate
 
         self.accepted_proposals = [
             []
@@ -407,18 +407,6 @@ class Model():  # pylint:disable=too-many-instance-attributes
             self.weights[epoch] / self.weights[epoch].sum(axis=0)
 
         self.prev_weights = np.array(self.weights[epoch])
-
-    def simulate(self, args):
-        """
-        Call the simulation function that was passed in.
-
-        Parameters:
-            args: dict
-                Gets passed in to the simulation function.
-
-        Returns: data
-        """
-        return self.simulate_func(self.priors, args)
 
     def increment_num_epochs_processed(self):
         """
