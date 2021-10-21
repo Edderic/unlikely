@@ -202,7 +202,10 @@ class Prior(ABC):
             args: dict
         """
 
-    def use_distribution_from_samples(self, samples):
+    def use_distribution_from_samples(
+        self,
+        samples,
+    ):
         """
         Creates a distribution out of samples.
 
@@ -214,8 +217,6 @@ class Prior(ABC):
             samples,
             {}
         )
-
-        self.use_constant_dev()
 
 
 class BetaFromSamples(DistributionFromSamples):
@@ -375,8 +376,6 @@ class Uniform(Prior):
                 'upper_bound': self.beta
             }
         )
-
-        self.use_constant_dev()
 
 
 class UniformFromSamples(DistributionFromSamples):

@@ -415,14 +415,47 @@ class Model():  # pylint:disable=too-many-instance-attributes
         """
         self.num_epochs_processed += 1
 
-    def use_distribution_from_samples(self):
+    def set_perturb(self, setting):
+        """
+        Set perturbation setting
+
+        Parameters:
+            setting: boolean
+        """
+        self.perturb = setting
+
+    def use_distribution_from_samples(
+        self,
+        set_perturb=None,
+        use_constant_dev=None
+    ):
         """
         Uses the previously accepted proposals as new priors to sample from.
+
+        Parameters:
+            set_perturb: boolean. Defaults to False.
+                If True, will perturb particles when get_perturbed_proposal is
+                called, and won't otherwise.
+
+            use_constant_dev: boolean. Defaults to True.
+                If True, use constant standard deviation throughout populations
+                / epochs.
         """
         for prior_name, prior in self.priors.items():
             prior.use_distribution_from_samples(
                 self.prev_accepted_proposals[prior_name]
             )
+
+        if set_perturb is None:
+            set_perturb = False
+
+        if use_constant_dev is None:
+            use_constant_dev = True
+
+        if use_constant_dev is True:
+            self.use_constant_dev()
+
+        self.set_perturb(set_perturb)
 
     def use_constant_dev(self):
         """
@@ -561,12 +594,35 @@ class Models():
         for model in self.models:
             model.increment_num_epochs_processed()
 
-    def use_distribution_from_samples(self):
+    def set_perturb(self, setting):
         """
-        Tells each model to make use of distributions coming from data.
+        Parameters:
+            setting: boolean
+                If True, set perturb setting to True, and False otherwise.
         """
         for model in self.models:
-            model.use_distribution_from_samples()
+            model.set_perturb(setting)
+
+    def use_distribution_from_samples(
+        self,
+        set_perturb=None,
+        use_constant_dev=None
+    ):
+        """
+        Tells each model to make use of distributions coming from data.
+
+        Parameters:
+            set_perturb: Defaults to False.
+            use_constant_dev: Defaults to True
+        """
+        if set_perturb is None:
+            set_perturb = False
+
+        if use_constant_dev is None:
+            use_constant_dev = True
+
+        for model in self.models:
+            model.use_distribution_from_samples(set_perturb, use_constant_dev)
 
     def use_constant_dev(self):
         """
