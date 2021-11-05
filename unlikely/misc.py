@@ -1,7 +1,10 @@
+"""
+Miscellaneous functions
+"""
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 
 def create_images_from_data(
     data,
@@ -77,6 +80,7 @@ def create_images_from_data(
     >>> )
 
     """
+    # pylint:disable=too-many-locals,too-many-arguments,too-many-branches
     if bins is None:
         bins = False
 
@@ -90,11 +94,11 @@ def create_images_from_data(
 
     num_cols = len(data['data'])
 
-    x, y = figsize_mult
+    row_mult, col_mult = figsize_mult
     fig, axs = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_rows * x, num_cols * y)
+        figsize=(num_rows * row_mult, num_cols * col_mult)
     )
 
     fig.suptitle(data['title'])
@@ -103,28 +107,28 @@ def create_images_from_data(
         for row_index, row in enumerate(col):
 
             if num_cols == 1 and num_rows > 1:
-                ax = axs[row_index]
+                axis = axs[row_index]
             elif num_cols == 1 and num_rows == 1:
-                ax = axs
+                axis = axs
             else:
-                ax = axs[row_index, col_index]
+                axis = axs[row_index, col_index]
 
-            ax.set_xlim(xlim)
-            ax.set_title(row['title'])
+            axis.set_xlim(xlim)
+            axis.set_title(row['title'])
 
             if ylim is not None:
-                ax.set_ylim(ylim)
+                axis.set_ylim(ylim)
 
-            for df in row['data']:
+            for dataframe in row['data']:
                 if bins:
-                    df.plot.hist(
-                        ax=ax,
+                    dataframe.plot.hist(
+                        ax=axis,
                         alpha=alpha,
                         bins=bins
                     )
                 else:
-                    df.plot.kde(
-                        ax=ax,
+                    dataframe.plot.kde(
+                        ax=axis,
                         alpha=alpha
                     )
 
@@ -139,17 +143,19 @@ def create_images_from_data(
 
     return fig, axs
 
-def distance(x,y):
+
+def distance(arg1, arg2):
     """
-    Get absolute value between x and y.
+    Get absolute value between arg1 and arg2.
 
     Parameters:
-        x: numeric
-        y: numeric
+        arg1: numeric
+        arg2: numeric
 
     Returns: numericc
     """
-    return abs(x-y)
+    return abs(arg1-arg2)
+
 
 def find_index_of_closest(to_find, values):
     """
@@ -164,19 +170,37 @@ def find_index_of_closest(to_find, values):
     """
     return find_closest(to_find, values, 0, len(values) - 1)
 
+
 def find_closest(to_find, values, left_index, right_index):
+    """
+    Private method for recursion.
+
+    Parameters:
+        to_find: float
+            The value to find. Doesn't necessarily have to be in there.
+
+        values: list
+            sorted
+
+        left_index: integer
+        right_index: integer
+    """
     if values[left_index] == to_find:
         return left_index
     if values[right_index] == to_find:
         return right_index
 
     if right_index - left_index <= 1:
-        if distance(to_find, values[left_index]) >= distance(to_find, values[right_index]):
+        if distance(
+            to_find, values[left_index]
+        ) >= distance(to_find, values[right_index]):
             return right_index
 
         return left_index
 
-    if distance(to_find, values[left_index]) >= distance(to_find, values[right_index]):
+    if distance(
+        to_find, values[left_index]
+    ) >= distance(to_find, values[right_index]):
         return find_closest(
             to_find,
             values,
@@ -184,13 +208,12 @@ def find_closest(to_find, values, left_index, right_index):
             right_index=right_index
         )
 
-    if distance(to_find, values[left_index]) < distance(to_find, values[right_index]):
-        return find_closest(
-            to_find,
-            values,
-            left_index=left_index,
-            right_index=(right_index - left_index) // 2 + left_index
-        )
+    return find_closest(
+        to_find,
+        values,
+        left_index=left_index,
+        right_index=(right_index - left_index) // 2 + left_index
+    )
 
 
 def setup_logging(filename=None, filemode='a', level=logging.INFO):
