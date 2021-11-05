@@ -3,6 +3,7 @@ Miscellaneous functions
 """
 import logging
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -216,6 +217,58 @@ def find_closest(to_find, values, left_index, right_index):
     )
 
 
+def hpdi(proba, array):
+    """
+    Give the highest posterior density interval. For example, the 95% HPDI
+    is a lower bound and upper bound such that:
+        1. they contain 95% probability, and
+        2. in total, have higher peaks than any other bound.
+
+    Parameters:
+        proba: float
+            A value between 0 and 1, inclusive. For example, if proba is 0.95,
+            then we'll get a 95% HPDI.
+        array: np.array
+            An array of samples.
+
+    Returns: tuple(integer, integer)
+        First item is the lower bound.
+        Second item is the upper bound.
+    """
+    if proba < 0 or proba > 1:
+        raise ValueError(
+            f"Proba {proba} should be between 0 and 1, inclusive."
+        )
+
+    sorted_array = np.array(sorted(array))
+    maximum = 0
+    length = sorted_array.shape[0]
+    offset = int(proba * length)
+
+    start_index_to_return = None
+    end_index_to_return = None
+
+    for start_index, _ in enumerate(sorted_array):
+        end_index = start_index + offset
+        summation = sorted_array[start_index:end_index].sum()
+
+        if summation > maximum:
+            start_index_to_return = start_index
+            end_index_to_return = end_index
+            maximum = summation
+
+        if end_index >= length - 1:
+            return (
+                sorted_array[start_index_to_return],
+                sorted_array[end_index_to_return]
+            )
+
+    # Will never get called, in theory, but just adding a return
+    # statement so that the linter doesn't complain.
+    return (
+        sorted_array[start_index_to_return],
+        sorted_array[end_index_to_return]
+    )
 def setup_logging(filename=None, filemode='a', level=logging.INFO):
     """
     Sets up logging with time, levelname, and message.

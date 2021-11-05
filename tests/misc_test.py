@@ -1,5 +1,21 @@
+import numpy as np
 import pytest
-from ..unlikely.misc import find_closest
+from ..unlikely.misc import find_closest, hpdi
+
+
+def test_hpdi():
+    # Skewed to the right, but already sorted
+    array = np.array(np.arange(1000))
+    lower, upper = hpdi(proba=0.95, array=array)
+
+    assert lower == 49
+    assert upper == 999
+
+    # Skewed to the right, but sorted in reverse
+    array = np.arange(1000)[::-1]
+    lower, upper = hpdi(proba=0.95, array=array)
+    assert lower == 49
+    assert upper == 999
 
 
 def test_find_closest():
