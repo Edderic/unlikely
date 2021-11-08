@@ -1,21 +1,28 @@
 import numpy as np
 import pytest
+from scipy.stats import beta
 from ..unlikely.misc import find_closest, hpdi
 
 
 def test_hpdi():
-    # Skewed to the right, but already sorted
-    array = np.array(np.arange(1000))
-    lower, upper = hpdi(proba=0.95, array=array)
+    size = 10_000
+    # Skewed to the right
+    array = np.random.beta(2, 1, size=size)
+    credible_interval_width = 0.95
+    lower, upper = hpdi(proba=credible_interval_width, array=array)
+    beta_dist = beta(2, 1)
+    probability = beta_dist.cdf(upper) - beta_dist.cdf(lower)
+    assert credible_interval_width == pytest.approx(probability, abs=0.01)
+    assert 1 == pytest.approx(upper, abs=0.01)
 
-    assert lower == 49
-    assert upper == 999
-
-    # Skewed to the right, but sorted in reverse
-    array = np.arange(1000)[::-1]
-    lower, upper = hpdi(proba=0.95, array=array)
-    assert lower == 49
-    assert upper == 999
+    # Skewed to the left
+    array = np.random.beta(1, 2, size=size)
+    credible_interval_width = 0.95
+    lower, upper = hpdi(proba=credible_interval_width, array=array)
+    beta_dist = beta(1, 2)
+    probability = beta_dist.cdf(upper) - beta_dist.cdf(lower)
+    assert credible_interval_width == pytest.approx(probability, abs=0.01)
+    assert 0 == pytest.approx(lower, abs=0.01)
 
 
 def test_find_closest():

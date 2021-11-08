@@ -241,34 +241,32 @@ def hpdi(proba, array):
         )
 
     sorted_array = np.array(sorted(array))
-    maximum = 0
+
+    # use binary search
     length = sorted_array.shape[0]
-    offset = int(proba * length)
+    normalizer = sorted_array.sum()
+    minimum_width = normalizer
 
     start_index_to_return = None
     end_index_to_return = None
 
-    for start_index, _ in enumerate(sorted_array):
-        end_index = start_index + offset
-        summation = sorted_array[start_index:end_index].sum()
+    limit = int((1 - proba) * length)
 
-        if summation > maximum:
+    for start_index in range(limit):
+        end_index = length - limit + start_index
+
+        diff = sorted_array[end_index] - sorted_array[start_index]
+        if diff <= minimum_width:
+            minimum_width = diff
             start_index_to_return = start_index
             end_index_to_return = end_index
-            maximum = summation
 
-        if end_index >= length - 1:
-            return (
-                sorted_array[start_index_to_return],
-                sorted_array[end_index_to_return]
-            )
-
-    # Will never get called, in theory, but just adding a return
-    # statement so that the linter doesn't complain.
     return (
         sorted_array[start_index_to_return],
         sorted_array[end_index_to_return]
     )
+
+
 def setup_logging(filename=None, filemode='a', level=logging.INFO):
     """
     Sets up logging with time, levelname, and message.
