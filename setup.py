@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unlikely",
-    version="0.4.1",
+    version="0.5.0",
     author="Edderic Ugaddan",
     author_email="edderic@gmail.com",
     description="Parallelized, Likelihood-free Bayesian Inference",
