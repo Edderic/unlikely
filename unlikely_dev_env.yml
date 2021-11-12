@@ -1,0 +1,19 @@
+name: unlikely_dev_env
+channels:
+  - anaconda
+  - conda-forge
+  - numba
+  - defaults
+dependencies:
+  - cloudpickle=2.0.0
+  - coiled=0.0.52
+  - conda-build=3.21.4
+  - dask=2021.8.0
+  - matplotlib=3.4.2
+  - numba=0.54.0rc2
+  - numpy=1.20.3
+  - pandas=1.3.1
+  - python=3.9.5
+  - pytest=6.2.5
+  - seaborn=0.11.2
+  - tqdm=4.62.3
