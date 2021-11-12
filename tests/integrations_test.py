@@ -4,8 +4,10 @@ Module for integration testing.
 import os
 from pathlib import Path
 
+from dask.distributed import Client, LocalCluster
 import numpy as np
 import pandas as pd
+import pytest
 
 from ..unlikely.engine import abc_smc
 from ..unlikely.models import Models, Model
@@ -408,6 +410,8 @@ def test_uniform_binomial_2():
     ])
 
     epsilons_list = [[0], [3, 2, 1, 0]]
+    local_cluster = LocalCluster(threads_per_worker=1)
+    client = Client(local_cluster)
 
     def distance(x, y):
         """
@@ -463,6 +467,7 @@ def test_uniform_binomial_2():
             models=models,
             obs=obs[:3],
             distance=distance,
+            client=client
         )
 
         data_to_display[0][0]['data'].append(
@@ -481,6 +486,7 @@ def test_uniform_binomial_2():
             models=models,
             obs=obs[3:7],
             distance=distance,
+            client=client
         )
 
         # The posterior distribution becomes the prior
@@ -500,6 +506,7 @@ def test_uniform_binomial_2():
             models=models,
             obs=obs[7:],
             distance=distance,
+            client=client
         )
 
         data_to_display[0][2]['data'].append(
@@ -529,6 +536,7 @@ def test_uniform_binomial_2():
             models=models_full_batch,
             obs=obs,
             distance=distance,
+            client=client
         )
 
         data_to_display[0][3]['data'].append(

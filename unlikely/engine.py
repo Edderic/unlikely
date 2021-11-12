@@ -154,7 +154,7 @@ def abc_smc(  # pylint:disable=too-many-locals,too-many-arguments
                     )
                 )
 
-            for future in as_completed(futures):
+            for future in tqdm(as_completed(futures)):
                 # Accepted
                 model_name, proposal, sub_wt_particle = future.result()
                 models.find_by_name(model_name).accept_proposal(
